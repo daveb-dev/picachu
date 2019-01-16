@@ -1,0 +1,43 @@
+# Dakota Input File: dakota.in
+# Usage:
+# dakota –i lhs.in –o lhs.out
+
+environment
+  tabular_data
+
+method
+	sampling
+    sample_type       lhs
+    samples           10
+    seed              98765
+
+
+model
+  single
+
+variables
+  normal_uncertain  6
+    descriptor         'M_C' 'M_O2' 'kappa_C' 'kappa_O2' 'L' 'kappa_eta'
+    means              1      1      1         1          1   1
+    std_deviations     0.1  0.1 0.1 0.1 0.1 0.1
+
+interface
+  fork asynchronous  evaluation_concurrency=1
+    analysis_drivers  'dakota_driver.sh'
+    parameters_file   'params.in'
+    results_file      'results.out'
+      file_save
+      #file_tag
+  allow_existing_results  #this is recommended for running on clusters
+    work_directory
+      named 'workdir'
+      directory_tag
+      directory_save      #this is recommended for running on clusters
+
+    dprepro
+
+responses
+  response_functions   2
+  descriptors          'total_C' 'total_F'
+  no_gradients
+  no_hessians
