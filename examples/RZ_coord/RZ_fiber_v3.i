@@ -25,6 +25,20 @@
 []
 
 #------------------------------------------------------------------------------#
+# Coordinates for bounding box IC
+[GlobalParams]
+  # IC Coordinates
+  y1 = 0
+  y2 = 8.0
+  x1 = 0
+  x2 = 0.8
+
+  # VectorPP
+  num_points  = 1000
+  sort_by     = x
+[]
+
+#------------------------------------------------------------------------------#
 [AuxVariables]
   [./f_dens]
     family = MONOMIAL
@@ -81,16 +95,6 @@
     [../]
   [../]
 []
-
-#------------------------------------------------------------------------------#
-# Coordinates for bounding box IC
-[GlobalParams]
-  y1 = 0
-  y2 = 8.0
-  x1 = 0
-  x2 = 0.8
-[]
-
 
 #------------------------------------------------------------------------------#
 [ICs]
@@ -162,6 +166,8 @@
     type = GenericConstantMaterial
     prop_names  = 'L kappa_eta'
     prop_values = '1 1.0e-3'
+    outputs = exodus
+    output_properties = 'L kappa_eta'
   [../]
 
   [./switching]
@@ -192,12 +198,14 @@
     prop_names = 'M_O2'
     prop_values = '1'
     outputs = exodus
-    output_properties = 'M_C'
+    output_properties = 'M_O2'
   [../]
   [./kappa_O2]
     type = GenericConstantMaterial
     prop_names  = 'kappa_O2'
     prop_values = '1.0e-2'
+    outputs = exodus
+    output_properties = 'kappa_O2'
   [../]
 
   #----------------------------------------------------------------------------#
@@ -205,7 +213,7 @@
   [./mobility_C]
     type = GenericConstantMaterial
     prop_names = 'M_C'
-    prop_values = '0.1' #0.01
+    prop_values = '0.1'
     outputs = exodus
     output_properties = 'M_C'
   [../]
@@ -213,6 +221,8 @@
     type = GenericConstantMaterial
     prop_names  = 'kappa_C'
     prop_values = '1.0e-2'
+    outputs = exodus
+    output_properties = 'kappa_C'
   [../]
 
   #----------------------------------------------------------------------------#
@@ -234,8 +244,8 @@
     derivative_order = 2
     f_name = f_s
     args = 'x_C x_O2'
-    constant_names = 'Ef_v kb T tol'
-    constant_expressions = '4.0 8.6173303e-5 1000.0 1e-4'
+    constant_names =       'Ef_v  kb           T       tol'
+    constant_expressions = '4.0   8.6173303e-5 1000.0  1e-4'
     # NEVER EVER USE THE MATERIAL FOR VAC CONC
     # ParsedMaterial vs. DerivativeParsedMaterial
     function  = 'kb*T*x_C*plog(x_C,tol)
@@ -307,10 +317,12 @@
 
   dtmax = 1.0
   dtmin = 1e-12
-  end_time = 20.0
+  num_steps = 20
+  #end_time = 20.0
 
   [./Adaptivity]
-    max_h_level = 5
+    max_h_level = 4
+    initial_adaptivity = 2
     coarsen_fraction = 0.1
     refine_fraction = 0.8
   [../]
@@ -361,7 +373,7 @@
 [Outputs]
   exodus = true
   perf_graph = true
-  file_base = ./results_v2/RZ_fiber_v2_out
+  file_base = ./results_v3/RZ_fiber_v3_out
 
   [./csv]
     type = CSV
@@ -371,7 +383,7 @@
    [./vector]
      type = CSV
      execute_on = 'INITIAL FINAL'
-     file_base = ./results_v2/vector_PP/vector
+     file_base = ./results_v3/vector_PP/vector
    [../]
 []
 
@@ -384,231 +396,189 @@
 [VectorPostprocessors]
   [./line_4.0]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 4.0 0.0'
-    end_point   = '0.7 4.0 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 4.0 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.9]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.9 0.0'
-    end_point   = '0.7 3.9 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.9 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.8]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.8 0.0'
-    end_point   = '0.7 3.8 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.8 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.7]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.7 0.0'
-    end_point   = '0.7 3.7 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.7 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.6]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.6 0.0'
-    end_point   = '0.7 3.6 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.6 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.5]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.5 0.0'
-    end_point   = '0.7 3.5 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.5 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.4]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.4 0.0'
-    end_point   = '0.7 3.4 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.4 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.3]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.3 0.0'
-    end_point   = '0.7 3.3 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.3 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.2]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.2 0.0'
-    end_point   = '0.7 3.2 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.2 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.1]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.1 0.0'
-    end_point   = '0.7 3.1 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.1 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_3.0]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 3.0 0.0'
-    end_point   = '0.7 3.0 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 3.0 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_2.8]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 2.8 0.0'
-    end_point   = '0.7 2.8 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 2.8 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_2.6]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 2.6 0.0'
-    end_point   = '0.7 2.6 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 2.6 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_2.4]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 2.4 0.0'
-    end_point   = '0.7 2.4 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 2.4 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_2.2]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 2.2 0.0'
-    end_point   = '0.7 2.2 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 2.2 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_2.0]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 2.0 0.0'
-    end_point   = '0.7 2.0 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 2.0 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_1.8]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 1.8 0.0'
-    end_point   = '0.7 1.8 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 1.8 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_1.6]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 1.6 0.0'
-    end_point   = '0.7 1.6 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 1.6 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_1.4]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 1.4 0.0'
-    end_point   = '0.7 1.4 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 1.4 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_1.2]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 1.2 0.0'
-    end_point   = '0.7 1.2 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 1.2 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]
 
   [./line_1.0]
     type = LineValueSampler
-    num_points  = 40
     start_point = '0.0 1.0 0.0'
-    end_point   = '0.7 1.0 0.0'
-    variable    = x_C
-    sort_by     = x
+    end_point   = '2.0 1.0 0.0'
+    variable    = 'x_C f_dens eta'
     execute_on  = 'INITIAL TIMESTEP_END'
     outputs     = vector
   [../]

@@ -49,13 +49,23 @@ Recombination::initialSetup()
 Real
 Recombination::computeQpResidual()
 {
-  return -_L[_qp] * _test[_i][_qp] * _u[_qp] * _v[_qp];
+  if ( (_u[_qp] < 0) || (_v[_qp] < 0)){
+    return 0;
+  }
+  else{
+    return -_L[_qp] * _test[_i][_qp] * _u[_qp] * _v[_qp];
+  }
 }
 
 Real
 Recombination::computeQpJacobian()
 {
-  return -(_dLdu[_qp] * _u[_qp] + _L[_qp]) * _phi[_j][_qp] * _v[_qp] * _test[_i][_qp];
+  if ( (_u[_qp] < 0) || (_v[_qp] < 0)){
+    return 0;
+  }
+  else{
+    return -(_dLdu[_qp] * _u[_qp] + _L[_qp]) * _phi[_j][_qp] * _v[_qp] * _test[_i][_qp];
+  }
 }
 
 Real
@@ -64,9 +74,14 @@ Recombination::computeQpOffDiagJacobian(unsigned int jvar)
   // first handle the case where jvar is a coupled variable v being added to residual
   // the first term in the sum just multiplies by L which is always needed
   // the second term accounts for cases where L depends on v
-  if (jvar == _v_var)
-    return -(_L[_qp] + _dLdv[_qp] * _v[_qp]) * _phi[_j][_qp] * _u[_qp] * _test[_i][_qp];
-
+  if (jvar == _v_var){
+    if ( (_u[_qp] < 0) || (_v[_qp] < 0)){
+      return 0;
+    }
+    else{
+      return -(_L[_qp] + _dLdv[_qp] * _v[_qp]) * _phi[_j][_qp] * _u[_qp] * _test[_i][_qp];
+    }
+  }
   //  for all other vars get the coupled variable jvar is referring to
   const unsigned int cvar = mapJvarToCvar(jvar);
 
