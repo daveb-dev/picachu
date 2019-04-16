@@ -6,12 +6,12 @@
   dim = 2
 
   xmin = 0.0
-  xmax = 3.0
-  nx = 15
+  xmax = 2.0
+  nx = 10
 
   ymin = 0.0
-  ymax = 12.0
-  ny = 60
+  ymax = 10.0
+  ny = 50
 
   uniform_refine = 4
   elem_type = QUAD4
@@ -29,9 +29,9 @@
 [GlobalParams]
   # IC Coordinates
   y1 = 0
-  y2 = 10.0
+  y2 = 8.0
   x1 = 0
-  x2 = 1.0
+  x2 = 0.8
 
   # VectorPP
   num_points  = 1000
@@ -97,7 +97,6 @@
 []
 
 #------------------------------------------------------------------------------#
-
 [ICs]
   [./IC_x_O2]
     type = ConstantIC
@@ -215,7 +214,7 @@
   [./mobility_C]
     type = GenericConstantMaterial
     prop_names = 'M_C'
-    prop_values = '0.001'
+    prop_values = '0.01'
     outputs = exodus
     output_properties = 'M_C'
   [../]
@@ -328,7 +327,7 @@
   dtmax = 50
   dtmin = 1e-12
   #num_steps = 25
-  end_time = 10000
+  #end_time = 200.0
 
   [./Adaptivity]
     max_h_level = 4
@@ -382,7 +381,7 @@
 #------------------------------------------------------------------------------#
 [Outputs]
   perf_graph = true
-  file_base = ./results_v8/RZ_fiber_v8_out
+  file_base = ./results_v7/RZ_fiber_v7_out
 
   [./exodus]
     type = Exodus
@@ -397,7 +396,7 @@
    [./vector]
      type = CSV
      execute_on = 'INITIAL TIMESTEP_END'
-     file_base = ./results_v8/vector_PP/vector
+     file_base = ./results_v7/vector_PP/vector
    [../]
 []
 

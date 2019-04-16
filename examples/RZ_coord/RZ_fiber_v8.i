@@ -97,7 +97,6 @@
 []
 
 #------------------------------------------------------------------------------#
-
 [ICs]
   [./IC_x_O2]
     type = ConstantIC
@@ -195,12 +194,22 @@
   #----------------------------------------------------------------------------#
   # O
   [./mobility_O2]
-    type = GenericConstantMaterial
-    prop_names = 'M_O2'
-    prop_values = '20'
-    outputs = exodus
-    output_properties = 'M_O2'
+    # type = GenericConstantMaterial
+    # prop_names = 'M_O2'
+    # prop_values = '20'
+    # outputs = exodus
+    # output_properties = 'M_O2'
+
+    type = ParsedMaterial
+    f_name = M_O2
+    constant_names =       'M_g M_s'
+    constant_expressions = '20  0.1'
+    args = 'eta'
+    material_property_names = 'h(eta)'
+    function = 'h*M_g + (1-h)*M_s'
   [../]
+
+
   [./kappa_O2]
     # Units: microJ/micrometer = J/m
     type = GenericConstantMaterial
@@ -215,7 +224,7 @@
   [./mobility_C]
     type = GenericConstantMaterial
     prop_names = 'M_C'
-    prop_values = '0.001'
+    prop_values = '1e-4'
     outputs = exodus
     output_properties = 'M_C'
   [../]
@@ -325,7 +334,7 @@
   nl_rel_tol = 1.0e-8
   #nl_abs_tol = 1.0e-10
 
-  dtmax = 50
+  dtmax = 1000
   dtmin = 1e-12
   #num_steps = 25
   end_time = 10000

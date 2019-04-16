@@ -161,15 +161,6 @@
 
   #----------------------------------------------------------------------------#
   # Order parameter stuff
-  [./constants_AC]
-    # kappa units: microJ/micrometer = J/m
-    type = GenericConstantMaterial
-    prop_names  = 'L kappa_eta'
-    prop_values = '1 1e-4'
-    outputs = exodus
-    output_properties = 'L kappa_eta'
-  [../]
-
   [./switching]
     type = DerivativeParsedMaterial
     f_name = h
@@ -191,12 +182,21 @@
     output_properties = g
   [../]
 
+  [./constants_AC]
+    # kappa units: microJ/micrometer = J/m
+    type = GenericConstantMaterial
+    prop_names  = 'L kappa_eta'
+    prop_values = '0.1 1e-3'
+    outputs = exodus
+    output_properties = 'L kappa_eta'
+  [../]
+
   #----------------------------------------------------------------------------#
   # O
   [./mobility_O2]
     type = GenericConstantMaterial
     prop_names = 'M_O2'
-    prop_values = '1'
+    prop_values = '10'
     outputs = exodus
     output_properties = 'M_O2'
   [../]
@@ -204,7 +204,7 @@
     # Units: microJ/micrometer = J/m
     type = GenericConstantMaterial
     prop_names  = 'kappa_O2'
-    prop_values = '1e-4'
+    prop_values = '1e-3' #O2 has a linear profile.
     outputs = exodus
     output_properties = 'kappa_O2'
   [../]
@@ -222,7 +222,7 @@
     # Units: microJ/micrometer = J/m
     type = GenericConstantMaterial
     prop_names  = 'kappa_C'
-    prop_values = '1e-4'
+    prop_values = '1e-3'
     outputs = exodus
     output_properties = 'kappa_C'
   [../]
@@ -281,7 +281,7 @@
     type = DerivativeParsedMaterial
     f_name = f_loc
     constant_names =       'W'
-    constant_expressions = '0.01'
+    constant_expressions = '0.02'
     args = 'x_C x_O2 eta'
     material_property_names = 'h(eta) g(eta) f_g(x_O2,x_C) f_s(x_C,x_O2)'
     function = 'h*f_g + (1-h)*f_s + W*g'
@@ -324,10 +324,10 @@
   nl_rel_tol = 1.0e-8
   #nl_abs_tol = 1.0e-10
 
-  dtmax = 1.0
+  dtmax = 10
   dtmin = 1e-12
-  num_steps = 20
-  #end_time = 20.0
+  num_steps = 25
+  #end_time = 200.0
 
   [./Adaptivity]
     max_h_level = 4
@@ -395,7 +395,7 @@
 
    [./vector]
      type = CSV
-     execute_on = 'INITIAL FINAL'
+     execute_on = 'INITIAL TIMESTEP_END'
      file_base = ./results_v6/vector_PP/vector
    [../]
 []
