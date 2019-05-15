@@ -13,6 +13,7 @@
   ymin = 0.0
   ymax = 12.0
   ny = 240
+
 []
 
 #------------------------------------------------------------------------------#
@@ -24,6 +25,7 @@
 
 #------------------------------------------------------------------------------#
 [GlobalParams]
+  int_width = 0.5
 []
 
 #------------------------------------------------------------------------------#
@@ -37,26 +39,14 @@
   [../]
   [./eta3]
   [../]
-
-  [./lambda]
-    order = FIRST
-    family = LAGRANGE
-    initial_condition = 1.0
-  [../]
 []
 
 #------------------------------------------------------------------------------#
-# [AuxVariables]
-#   [./bnds]
-#     order = FIRST
-#     family = LAGRANGE
-#   [../]
-# []
 
 #------------------------------------------------------------------------------#
 [ICs]
   [./IC_w]
-    type = BoundingBoxIC
+    type = BoundingBoxIC_TANH
     variable = w
     inside = 0
     outside = 0
@@ -67,7 +57,7 @@
   [../]
 
   [./IC_eta1]
-    type = BoundingBoxIC
+    type = BoundingBoxIC_TANH
     variable = eta1
     inside = 1.0
     outside = 0.0
@@ -78,7 +68,7 @@
   [../]
 
   [./IC_eta2]
-    type = BoundingBoxIC
+    type = BoundingBoxIC_TANH
     variable = eta2
     inside = 1.0
     outside = 0.0
@@ -131,18 +121,9 @@
   [../]
 
   [./AC_multi_int_1]
-    type = ACMultiInterface
+    type = ACInterface
     variable = eta1
-    mob_name = L
-    etas = 'eta1 eta2 eta3'
-    kappa_names = 'kappa11 kappa12 kappa13'
-  [../]
-
-  [./lagrange1]
-    type = SwitchingFunctionConstraintEta
-    variable = eta1
-    h_name   = h1
-    lambda = lambda
+    kappa_name = kappa_op
   [../]
 
   [./AC_switch_1]
@@ -150,7 +131,7 @@
     variable = eta1
     Fj_names  = 'GP_fiber GP_char GP_gas'
     hj_names  = 'h1 h2 h3'
-    args = 'eta2 eta3 w'
+    args = 'eta2 w eta3'
   [../]
 
   [./eta1_dot]
@@ -169,18 +150,9 @@
   [../]
 
   [./AC_multi_int_2]
-    type = ACMultiInterface
+    type = ACInterface
     variable = eta2
-    mob_name = L
-    etas = 'eta1 eta2 eta3'
-    kappa_names = 'kappa21 kappa22 kappa23'
-  [../]
-
-  [./lagrange2]
-    type = SwitchingFunctionConstraintEta
-    variable = eta2
-    h_name   = h2
-    lambda = lambda
+    kappa_name = kappa_op
   [../]
 
   [./AC_switch_2]
@@ -188,7 +160,7 @@
     variable = eta2
     Fj_names  = 'GP_fiber GP_char GP_gas'
     hj_names  = 'h1 h2 h3'
-    args = 'eta1 eta3 w'
+    args = 'eta1 w eta3'
   [../]
 
   [./eta2_dot]
@@ -197,7 +169,7 @@
   [../]
 
   #----------------------------------------------------------------------------#
-  # Order Parameter Kernels
+  #Order Parameter Kernels
   [./AC_bulk_3]
     type = AllenCahn
     f_name = GP_total
@@ -214,12 +186,6 @@
     kappa_names = 'kappa31 kappa32 kappa33'
   [../]
 
-  [./lagrange3]
-    type = SwitchingFunctionConstraintEta
-    variable = eta3
-    h_name   = h3
-    lambda = lambda
-  [../]
 
   [./AC_switch_3]
     type = ACSwitching
@@ -234,15 +200,6 @@
     variable = eta3
   [../]
 
-  [./lagrange]
-    type = SwitchingFunctionConstraintLagrange
-    variable = lambda
-    etas    = 'eta1 eta2 eta3'
-    h_names = 'h1   h2   h3'
-    epsilon = 0
-  [../]
-
-
   #----------------------------------------------------------------------------#
   # Coupled Kernels
   [./coupled_eta1dot]
@@ -250,16 +207,16 @@
     variable = w
     v = eta1
     Fj_names = 'x_fiber x_char x_gas'
-    hj_names = 'h1 h2 h3'
+    hj_names = 'h1 h2  h3'
     args = 'eta1 eta2 eta3'
   [../]
   [./coupled_eta2dot]
     type = CoupledSwitchingTimeDerivative
     variable = w
     v = eta2
-    Fj_names = 'x_fiber x_char x_gas'
-    hj_names = 'h1 h2 h3'
-    args = 'eta1 eta2 eta3'
+    Fj_names = 'x_fiber x_char  x_gas'
+    hj_names = 'h1 h2  h3'
+    args = 'eta1 eta2  eta3'
   [../]
   [./coupled_eta3dot]
     type = CoupledSwitchingTimeDerivative
@@ -288,9 +245,9 @@
   [./kappas]
     type = GenericConstantMaterial
 
-    prop_values ='1e-3 1e-3 1e-3
-                  1e-3 1e-3 1e-3
-                  1e-3 1e-3 1e-3'
+    prop_values ='1e-2 1e-2 1e-2
+                  1e-2 1e-2 1e-2
+                  1e-2 1e-2 1e-2'
 
     prop_names = 'kappa11 kappa12 kappa13
                   kappa21 kappa22 kappa23
@@ -363,7 +320,7 @@
 
     outputs = exodus
     output_properties = x_fiber
-    enable_jit = false
+
   [../]
 
   [./x_char]
@@ -380,7 +337,7 @@
 
     outputs = exodus
     output_properties = x_char
-    enable_jit = false
+
   [../]
 
   [./x_gas]
@@ -397,7 +354,7 @@
 
     outputs = exodus
     output_properties = x_gas
-    enable_jit = false
+
   [../]
 
   # Grand potential density of the gas phase according to parabolic free energy
@@ -417,7 +374,7 @@
 
     outputs = exodus
     output_properties = GP_fiber
-    enable_jit = false
+
   [../]
 
   # Grand potential density of the gas phase according to parabolic free energy
@@ -437,7 +394,7 @@
 
     outputs = exodus
     output_properties = GP_char
-    enable_jit = false
+
   [../]
 
   # Grand potential density of the gas phase according to parabolic free energy
@@ -457,7 +414,7 @@
 
     outputs = exodus
     output_properties = GP_gas
-    enable_jit = false
+
   [../]
 
   # Total GP
@@ -465,10 +422,10 @@
     type = DerivativeParsedMaterial
     f_name = GP_total
 
-    function = 'h1*GP_fiber +h2*GP_char + h3*GP_gas'
+    function = 'h1*GP_fiber +h2*GP_char  + h3*GP_gas'
 
-    args = 'w eta1 eta2 eta3'
-    material_property_names = 'h1(eta1) h2(eta2) h3(eta3) GP_fiber(w) GP_char(w) GP_gas(w)'
+    args = 'w eta1 eta2  eta3'
+    material_property_names = 'h1 h2 h3 GP_fiber(w) GP_char(w) GP_gas(w)'
 
     derivative_order = 2
 
@@ -503,26 +460,39 @@
 
 #------------------------------------------------------------------------------#
 [Executioner]
+  # solve_type = NEWTON
   type = Transient
   scheme = bdf2
-  solve_type = NEWTON
 
-  l_max_its = 15
+  petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_pc_type -pc_asm_overlap'
+  petsc_options_value = 'asm      31                  lu           1'
+
+  # solve_type = PJFNK
+  # petsc_options_iname = '-pc_type -pc_hypre_type -ksp_gmres_restart'
+  # petsc_options_value = 'hypre    boomeramg      31'
+
+  l_max_its = 30
   l_tol = 1e-3
   nl_max_its = 15
   nl_rel_tol = 1e-8
   nl_abs_tol = 1e-8
 
-  end_time = 1e4
+  #end_time = 1e4
   #dtmax = 2
+  num_steps = 10
+
+  [./Predictor]
+    type = SimplePredictor
+    scale = 1
+  [../]
 
   [./TimeStepper]
     type = IterationAdaptiveDT
-    dt = 1e-2
-    growth_factor = 2.0
-    cutback_factor = 0.8
-    optimal_iterations = 12
-    iteration_window = 0
+    dt = 1e-4
+    growth_factor = 1.2
+    cutback_factor = 0.5
+    # optimal_iterations = 20
+    # iteration_window = 0
   [../]
 []
 

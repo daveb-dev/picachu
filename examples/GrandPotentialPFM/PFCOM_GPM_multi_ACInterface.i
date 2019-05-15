@@ -24,6 +24,7 @@
 
 #------------------------------------------------------------------------------#
 [GlobalParams]
+  int_width = 0.25
 []
 
 #------------------------------------------------------------------------------#
@@ -35,28 +36,16 @@
   [../]
   [./eta2]
   [../]
-  [./eta3]
-  [../]
-
-  [./lambda]
-    order = FIRST
-    family = LAGRANGE
-    initial_condition = 1.0
-  [../]
+  # [./eta3]
+  # [../]
 []
 
 #------------------------------------------------------------------------------#
-# [AuxVariables]
-#   [./bnds]
-#     order = FIRST
-#     family = LAGRANGE
-#   [../]
-# []
 
 #------------------------------------------------------------------------------#
 [ICs]
   [./IC_w]
-    type = BoundingBoxIC
+    type = BoundingBoxIC_TANH
     variable = w
     inside = 0
     outside = 0
@@ -67,7 +56,7 @@
   [../]
 
   [./IC_eta1]
-    type = BoundingBoxIC
+    type = BoundingBoxIC_TANH
     variable = eta1
     inside = 1.0
     outside = 0.0
@@ -78,26 +67,30 @@
   [../]
 
   [./IC_eta2]
-    type = BoundingBoxIC
+    type = BoundingBoxIC_TANH
     variable = eta2
-    inside = 1.0
-    outside = 0.0
+    inside = 0.0
+    outside = 1.0
     y1 = 0
     y2 = 10.0
-    x1 = 1.0
-    x2 = 3.0
+    x1 = 0
+    x2 = 1.0
+    # y1 = 0
+    # y2 = 10.0
+    # x1 = 1.0
+    # x2 = 3.0
   [../]
 
-  [./IC_eta3]
-    type = BoundingBoxIC
-    variable = eta3
-    inside = 1.0
-    outside = 0.0
-    x1 = 0.0
-    x2 = 3.0
-    y1 = 10.0
-    y2 = 12.0
-  [../]
+  # [./IC_eta3]
+  #   type = BoundingBoxIC
+  #   variable = eta3
+  #   inside = 1.0
+  #   outside = 0.0
+  #   x1 = 0.0
+  #   x2 = 3.0
+  #   y1 = 10.0
+  #   y2 = 12.0
+  # [../]
 []
 
 #------------------------------------------------------------------------------#
@@ -127,30 +120,21 @@
     variable = eta1
     mob_name = L
     f_name = GP_total
-    args = 'w eta2 eta3'
+    args = 'w eta2'# eta3'
   [../]
 
   [./AC_multi_int_1]
-    type = ACMultiInterface
+    type = ACInterface
     variable = eta1
-    mob_name = L
-    etas = 'eta1 eta2 eta3'
-    kappa_names = 'kappa11 kappa12 kappa13'
-  [../]
-
-  [./lagrange1]
-    type = SwitchingFunctionConstraintEta
-    variable = eta1
-    h_name   = h1
-    lambda = lambda
+    kappa_name = kappa_op
   [../]
 
   [./AC_switch_1]
     type = ACSwitching
     variable = eta1
-    Fj_names  = 'GP_fiber GP_char GP_gas'
-    hj_names  = 'h1 h2 h3'
-    args = 'eta2 eta3 w'
+    Fj_names  = 'GP_fiber GP_char' #GP_gas'
+    hj_names  = 'h1 h2' #h3
+    args = 'eta2 w' #eta3
   [../]
 
   [./eta1_dot]
@@ -165,30 +149,21 @@
     f_name = GP_total
     variable = eta2
     mob_name = L
-    args = 'w eta1 eta3'
+    args = 'w eta1'# eta3'
   [../]
 
   [./AC_multi_int_2]
-    type = ACMultiInterface
+    type = ACInterface
     variable = eta2
-    mob_name = L
-    etas = 'eta1 eta2 eta3'
-    kappa_names = 'kappa21 kappa22 kappa23'
-  [../]
-
-  [./lagrange2]
-    type = SwitchingFunctionConstraintEta
-    variable = eta2
-    h_name   = h2
-    lambda = lambda
+    kappa_name = kappa_op
   [../]
 
   [./AC_switch_2]
     type = ACSwitching
     variable = eta2
-    Fj_names  = 'GP_fiber GP_char GP_gas'
-    hj_names  = 'h1 h2 h3'
-    args = 'eta1 eta3 w'
+    Fj_names  = 'GP_fiber GP_char'# GP_gas'
+    hj_names  = 'h1 h2'# h3'
+    args = 'eta1 w'#eta3
   [../]
 
   [./eta2_dot]
@@ -198,50 +173,35 @@
 
   #----------------------------------------------------------------------------#
   # Order Parameter Kernels
-  [./AC_bulk_3]
-    type = AllenCahn
-    f_name = GP_total
-    variable = eta3
-    mob_name = L
-    args = 'w eta1 eta2'
-  [../]
-
-  [./AC_multi_int_3]
-    type = ACMultiInterface
-    variable = eta3
-    mob_name = L
-    etas = 'eta1 eta2 eta3'
-    kappa_names = 'kappa31 kappa32 kappa33'
-  [../]
-
-  [./lagrange3]
-    type = SwitchingFunctionConstraintEta
-    variable = eta3
-    h_name   = h3
-    lambda = lambda
-  [../]
-
-  [./AC_switch_3]
-    type = ACSwitching
-    variable = eta3
-    Fj_names  = 'GP_fiber GP_char GP_gas'
-    hj_names  = 'h1 h2 h3'
-    args = 'eta1 eta2 w'
-  [../]
-
-  [./eta3_dot]
-    type = TimeDerivative
-    variable = eta3
-  [../]
-
-  [./lagrange]
-    type = SwitchingFunctionConstraintLagrange
-    variable = lambda
-    etas    = 'eta1 eta2 eta3'
-    h_names = 'h1   h2   h3'
-    epsilon = 0
-  [../]
-
+  # [./AC_bulk_3]
+  #   type = AllenCahn
+  #   f_name = GP_total
+  #   variable = eta3
+  #   mob_name = L
+  #   args = 'w eta1 eta2'
+  # [../]
+  #
+  # [./AC_multi_int_3]
+  #   type = ACMultiInterface
+  #   variable = eta3
+  #   mob_name = L
+  #   etas = 'eta1 eta2 eta3'
+  #   kappa_names = 'kappa31 kappa32 kappa33'
+  # [../]
+  #
+  #
+  # [./AC_switch_3]
+  #   type = ACSwitching
+  #   variable = eta3
+  #   Fj_names  = 'GP_fiber GP_char GP_gas'
+  #   hj_names  = 'h1 h2 h3'
+  #   args = 'eta1 eta2 w'
+  # [../]
+  #
+  # [./eta3_dot]
+  #   type = TimeDerivative
+  #   variable = eta3
+  # [../]
 
   #----------------------------------------------------------------------------#
   # Coupled Kernels
@@ -249,26 +209,26 @@
     type = CoupledSwitchingTimeDerivative
     variable = w
     v = eta1
-    Fj_names = 'x_fiber x_char x_gas'
-    hj_names = 'h1 h2 h3'
-    args = 'eta1 eta2 eta3'
+    Fj_names = 'x_fiber x_char'# x_gas'
+    hj_names = 'h1 h2'# h3'
+    args = 'eta1 eta2'# eta3'
   [../]
   [./coupled_eta2dot]
     type = CoupledSwitchingTimeDerivative
     variable = w
     v = eta2
-    Fj_names = 'x_fiber x_char x_gas'
-    hj_names = 'h1 h2 h3'
-    args = 'eta1 eta2 eta3'
+    Fj_names = 'x_fiber x_char'# x_gas'
+    hj_names = 'h1 h2'# h3'
+    args = 'eta1 eta2'# eta3'
   [../]
-  [./coupled_eta3dot]
-    type = CoupledSwitchingTimeDerivative
-    variable = w
-    v = eta3
-    Fj_names = 'x_fiber x_char x_gas'
-    hj_names = 'h1 h2 h3'
-    args = 'eta1 eta2 eta3'
-  [../]
+  # [./coupled_eta3dot]
+  #   type = CoupledSwitchingTimeDerivative
+  #   variable = w
+  #   v = eta3
+  #   Fj_names = 'x_fiber x_char x_gas'
+  #   hj_names = 'h1 h2 h3'
+  #   args = 'eta1 eta2 eta3'
+  # [../]
 
 []
 
@@ -321,7 +281,7 @@
     type = SwitchingFunctionMultiPhaseMaterial
     h_name = h1
 
-    all_etas = 'eta1 eta2 eta3'
+    all_etas = 'eta1 eta2'# eta3'
     phase_etas = 'eta1'
 
     outputs = exodus
@@ -331,22 +291,22 @@
     type = SwitchingFunctionMultiPhaseMaterial
     h_name = h2
 
-    all_etas = 'eta1 eta2 eta3'
+    all_etas = 'eta1 eta2'# eta3'
     phase_etas = 'eta2'
 
     outputs = exodus
     output_properties = h2
   [../]
-  [./switch_3]
-    type = SwitchingFunctionMultiPhaseMaterial
-    h_name = h3
-
-    all_etas = 'eta1 eta2 eta3'
-    phase_etas = 'eta3'
-
-    outputs = exodus
-    output_properties = h3
-  [../]
+  # [./switch_3]
+  #   type = SwitchingFunctionMultiPhaseMaterial
+  #   h_name = h3
+  #
+  #   all_etas = 'eta1 eta2 eta3'
+  #   phase_etas = 'eta3'
+  #
+  #   outputs = exodus
+  #   output_properties = h3
+  # [../]
 
   # Concentrations
   [./x_fiber]
@@ -465,10 +425,10 @@
     type = DerivativeParsedMaterial
     f_name = GP_total
 
-    function = 'h1*GP_fiber +h2*GP_char + h3*GP_gas'
+    function = 'h1*GP_fiber +h2*GP_char'# + h3*GP_gas'
 
-    args = 'w eta1 eta2 eta3'
-    material_property_names = 'h1(eta1) h2(eta2) h3(eta3) GP_fiber(w) GP_char(w) GP_gas(w)'
+    args = 'w eta1 eta2'# eta3'
+    material_property_names = 'h1 h2 GP_fiber(w) GP_char(w) GP_gas(w)'
 
     derivative_order = 2
 
@@ -503,18 +463,30 @@
 
 #------------------------------------------------------------------------------#
 [Executioner]
+  # solve_type = NEWTON
   type = Transient
   scheme = bdf2
-  solve_type = NEWTON
+
+  # petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_pc_type -pc_asm_overlap'
+  # petsc_options_value = 'asm      31                  lu           1'
+
+  solve_type = PJFNK
+  petsc_options_iname = '-pc_type -pc_hypre_type -ksp_gmres_restart'
+  petsc_options_value = 'hypre    boomeramg      31'
 
   l_max_its = 15
   l_tol = 1e-3
-  nl_max_its = 15
+  nl_max_its = 10
   nl_rel_tol = 1e-8
   nl_abs_tol = 1e-8
 
   end_time = 1e4
   #dtmax = 2
+
+  [./Predictor]
+    type = SimplePredictor
+    scale = 1
+  [../]
 
   [./TimeStepper]
     type = IterationAdaptiveDT

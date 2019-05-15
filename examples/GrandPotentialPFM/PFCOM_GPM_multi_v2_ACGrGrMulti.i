@@ -37,21 +37,15 @@
   [../]
   [./eta3]
   [../]
-
-  [./lambda]
-    order = FIRST
-    family = LAGRANGE
-    initial_condition = 1.0
-  [../]
 []
 
 #------------------------------------------------------------------------------#
-# [AuxVariables]
-#   [./bnds]
-#     order = FIRST
-#     family = LAGRANGE
-#   [../]
-# []
+[AuxVariables]
+  [./bnds]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+[]
 
 #------------------------------------------------------------------------------#
 [ICs]
@@ -123,26 +117,16 @@
   #----------------------------------------------------------------------------#
   # Order Parameter Kernels
   [./AC_bulk_1]
-    type = AllenCahn
+    type = ACGrGrMulti
     variable = eta1
-    mob_name = L
-    f_name = GP_total
-    args = 'w eta2 eta3'
+    v = 'eta2 eta3'
+    gamma_names = 'g12 g13'
   [../]
 
-  [./AC_multi_int_1]
-    type = ACMultiInterface
+  [./AC_int_1]
+    type = ACInterface
     variable = eta1
-    mob_name = L
-    etas = 'eta1 eta2 eta3'
-    kappa_names = 'kappa11 kappa12 kappa13'
-  [../]
-
-  [./lagrange1]
-    type = SwitchingFunctionConstraintEta
-    variable = eta1
-    h_name   = h1
-    lambda = lambda
+    kappa_name = kappa_op
   [../]
 
   [./AC_switch_1]
@@ -161,26 +145,16 @@
   #----------------------------------------------------------------------------#
   # Order Parameter Kernels
   [./AC_bulk_2]
-    type = AllenCahn
-    f_name = GP_total
+    type = ACGrGrMulti
     variable = eta2
-    mob_name = L
-    args = 'w eta1 eta3'
+    v = 'eta1 eta3'
+    gamma_names = 'g12 g23'
   [../]
 
-  [./AC_multi_int_2]
-    type = ACMultiInterface
+  [./AC_int_2]
+    type = ACInterface
     variable = eta2
-    mob_name = L
-    etas = 'eta1 eta2 eta3'
-    kappa_names = 'kappa21 kappa22 kappa23'
-  [../]
-
-  [./lagrange2]
-    type = SwitchingFunctionConstraintEta
-    variable = eta2
-    h_name   = h2
-    lambda = lambda
+    kappa_name = kappa_op
   [../]
 
   [./AC_switch_2]
@@ -199,26 +173,16 @@
   #----------------------------------------------------------------------------#
   # Order Parameter Kernels
   [./AC_bulk_3]
-    type = AllenCahn
-    f_name = GP_total
+    type = ACGrGrMulti
     variable = eta3
-    mob_name = L
-    args = 'w eta1 eta2'
+    v = 'eta1 eta2'
+    gamma_names = 'g13 g23'
   [../]
 
   [./AC_multi_int_3]
-    type = ACMultiInterface
+    type = ACInterface
     variable = eta3
-    mob_name = L
-    etas = 'eta1 eta2 eta3'
-    kappa_names = 'kappa31 kappa32 kappa33'
-  [../]
-
-  [./lagrange3]
-    type = SwitchingFunctionConstraintEta
-    variable = eta3
-    h_name   = h3
-    lambda = lambda
+    kappa_name = kappa_op
   [../]
 
   [./AC_switch_3]
@@ -233,15 +197,6 @@
     type = TimeDerivative
     variable = eta3
   [../]
-
-  [./lagrange]
-    type = SwitchingFunctionConstraintLagrange
-    variable = lambda
-    etas    = 'eta1 eta2 eta3'
-    h_names = 'h1   h2   h3'
-    epsilon = 0
-  [../]
-
 
   #----------------------------------------------------------------------------#
   # Coupled Kernels
@@ -274,32 +229,27 @@
 
 
 #------------------------------------------------------------------------------#
-# [AuxKernels]
-#   [./BndsCalc]
-#     type = BndsCalcAux
-#     variable = bnds
-#     execute_on = timestep_end
-#   [../]
-# []
+[AuxKernels]
+  [./BndsCalc]
+    type = BndsCalcAux
+    variable = bnds
+    execute_on = timestep_end
+    v = 'eta1 eta2 eta3'
+  [../]
+[]
 
 #------------------------------------------------------------------------------#
 [Materials]
   #----------------------------------------------------------------------------#
-  [./kappas]
+  [./gammas]
     type = GenericConstantMaterial
-
-    prop_values ='1e-3 1e-3 1e-3
-                  1e-3 1e-3 1e-3
-                  1e-3 1e-3 1e-3'
-
-    prop_names = 'kappa11 kappa12 kappa13
-                  kappa21 kappa22 kappa23
-                  kappa31 kappa32 kappa33'
+    prop_values ='1.5  2.0  2.5'
+    prop_names = 'g12  g13  g23'
   [../]
   [./constants]
     type = GenericConstantMaterial
-    prop_names  = 'D      chi'
-    prop_values = '0.1    0.03'
+    prop_names  = 'D      chi     mu'
+    prop_values = '0.1    0.03    1.0'
   [../]
 
   [./interfacial_param]
@@ -505,9 +455,14 @@
 [Executioner]
   type = Transient
   scheme = bdf2
-  solve_type = NEWTON
+  # petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_pc_type -pc_asm_overlap'
+  # petsc_options_value = 'asm      31                  lu           1'
 
-  l_max_its = 15
+  solve_type = PJFNK
+  petsc_options_iname = '-pc_type -pc_hypre_type -ksp_gmres_restart'
+  petsc_options_value = 'hypre    boomeramg      31'
+
+  l_max_its = 40
   l_tol = 1e-3
   nl_max_its = 15
   nl_rel_tol = 1e-8
