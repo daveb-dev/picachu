@@ -46,14 +46,9 @@
 #------------------------------------------------------------------------------#
 [ICs]
   [./IC_w]
-    type = BoundingBoxIC_TANH
+    type = ConstantIC
     variable = w
-    inside = 0
-    outside = 0
-    y1 = 0
-    y2 = 10.0
-    x1 = 0
-    x2 = 1.0
+    value = 0.0
   [../]
 
   [./IC_eta1]
@@ -79,7 +74,7 @@
   [../]
 
   [./IC_eta3]
-    type = BoundingBoxIC
+    type = BoundingBoxIC_TANH
     variable = eta3
     inside = 1.0
     outside = 0.0
@@ -179,11 +174,9 @@
   [../]
 
   [./AC_multi_int_3]
-    type = ACMultiInterface
+    type = ACInterface
     variable = eta3
-    mob_name = L
-    etas = 'eta1 eta2 eta3'
-    kappa_names = 'kappa31 kappa32 kappa33'
+    kappa_name = kappa_op
   [../]
 
 
@@ -242,17 +235,17 @@
 #------------------------------------------------------------------------------#
 [Materials]
   #----------------------------------------------------------------------------#
-  [./kappas]
-    type = GenericConstantMaterial
-
-    prop_values ='1e-2 1e-2 1e-2
-                  1e-2 1e-2 1e-2
-                  1e-2 1e-2 1e-2'
-
-    prop_names = 'kappa11 kappa12 kappa13
-                  kappa21 kappa22 kappa23
-                  kappa31 kappa32 kappa33'
-  [../]
+  # [./kappas]
+  #   type = GenericConstantMaterial
+  #
+  #   prop_values ='1e-2 1e-2 1e-2
+  #                 1e-2 1e-2 1e-2
+  #                 1e-2 1e-2 1e-2'
+  #
+  #   prop_names = 'kappa11 kappa12 kappa13
+  #                 kappa21 kappa22 kappa23
+  #                 kappa31 kappa32 kappa33'
+  # [../]
   [./constants]
     type = GenericConstantMaterial
     prop_names  = 'D      chi'
@@ -460,20 +453,19 @@
 
 #------------------------------------------------------------------------------#
 [Executioner]
-  # solve_type = NEWTON
   type = Transient
   scheme = bdf2
 
-  petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_pc_type -pc_asm_overlap'
-  petsc_options_value = 'asm      31                  lu           1'
+   petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_pc_type -pc_asm_overlap'
+   petsc_options_value = 'asm      31                  lu           1'
 
   # solve_type = PJFNK
   # petsc_options_iname = '-pc_type -pc_hypre_type -ksp_gmres_restart'
   # petsc_options_value = 'hypre    boomeramg      31'
 
-  l_max_its = 30
+
   l_tol = 1e-3
-  nl_max_its = 15
+
   nl_rel_tol = 1e-8
   nl_abs_tol = 1e-8
 
@@ -488,7 +480,7 @@
 
   [./TimeStepper]
     type = IterationAdaptiveDT
-    dt = 1e-4
+    dt = 0.1
     growth_factor = 1.2
     cutback_factor = 0.5
     # optimal_iterations = 20
@@ -505,3 +497,6 @@
 []
 
 #------------------------------------------------------------------------------#
+[Debug]
+  show_var_residual_norms = true
+[]

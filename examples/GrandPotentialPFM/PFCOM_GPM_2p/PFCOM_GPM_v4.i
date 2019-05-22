@@ -121,7 +121,7 @@
   [./interfacial_param]
     type = GenericConstantMaterial
     prop_names  = 'kappa_op     L'
-    prop_values = '1e-3         1e-3'
+    prop_values = '1e-2         1e-3'
   [../]
 
   [./Va]
@@ -336,6 +336,11 @@
 
   end_time = 10000
   #dtmax = 2
+
+  [./Predictor]
+    type = SimplePredictor
+    scale = 1
+  [../]
 
   [./TimeStepper]
     type = IterationAdaptiveDT
