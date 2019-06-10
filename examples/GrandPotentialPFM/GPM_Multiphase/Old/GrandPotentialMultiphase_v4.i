@@ -6,32 +6,27 @@
   type = GeneratedMesh
   dim = 2
 
-  xmin = 0
-  xmax = 20
-  nx = 20
+  xmin = 0.0
+  xmax = 3.0
+  nx = 60
 
-  ymin = 0
-  ymax = 20
-  ny = 20
-
-  uniform_refine = 1
+  ymin = 0.0
+  ymax = 12.0
+  ny = 240
 []
 
 #------------------------------------------------------------------------------#
-[GlobalParams]
-  op_num = 2
-  var_name_base = eta
-[]
+
 
 #------------------------------------------------------------------------------#
 [Variables]
   [./w]
   [../]
-  [./eta0]
+  [./etaa0]
   [../]
-  [./eta1]
+  [./etab0]
   [../]
-  [./eta2]
+  [./etag0]
   [../]
 []
 
@@ -46,20 +41,19 @@
 
 #------------------------------------------------------------------------------#
 [ICs]
-
-  [./IC_eta0]
+  [./IC_etaa0]
     type = FunctionIC
-    variable = eta0
+    variable = etaa0
     function = ic_func_fiber
   [../]
-  [./IC_eta1]
+  [./IC_etab0]
     type = FunctionIC
-    variable = eta1
+    variable = etab0
     function = ic_func_char
   [../]
-  [./IC_eta2]
+  [./IC_etag0]
     type = FunctionIC
-    variable = eta2
+    variable = etag0
     function = ic_func_gas
   [../]
   [./IC_w]
@@ -73,15 +67,15 @@
 [Functions]
   [./ic_func_fiber]
     type = ParsedFunction
-    value = '0.5*(1.0-tanh((x-10.0)/sqrt(2.0)))*(1.0+tanh((-y+10.0)/sqrt(2.0)))'
+    value = '(1/2)^2*(1.0-tanh((x-1.0)/0.1))*(1.0+tanh((-y+10.0)/0.1))'
   [../]
   [./ic_func_char]
     type = ParsedFunction
-    value = '0.5*(1.0-tanh((-x+10.0)/sqrt(2.0)))*(1.0+tanh((-y+10.0)/sqrt(2.0)))'
+    value = '(1/2)^2*(1.0-tanh((-x+1.0)/0.1))*(1.0+tanh((-y+10.0)/0.1))'
   [../]
   [./ic_func_gas]
     type = ParsedFunction
-    value = '1.0+tanh((y-10.0)/sqrt(2.0))'
+    value = '1/2*(1.0+tanh((y-10.0)/0.1))'
   [../]
 []
 
@@ -92,87 +86,87 @@
 #------------------------------------------------------------------------------#
 [Kernels]
   #----------------------------------------------------------------------------#
-  # Kernels for eta0 - fiber
-  [./AC_bulk_0]
+  # Kernels for etaa0 - fiber
+  [./AC_bulk_a0]
     type = ACGrGrMulti
-    variable = eta0
-    v =           'eta1 eta2'
-    gamma_names = 'gab   gab'
+    variable = etaa0
+    v =           'etab0 etag0'
+    gamma_names = 'gab   gag'
   [../]
 
-  [./AC_switch_0]
+  [./AC_switch_a0]
     type = ACSwitching
-    variable = eta0
-    Fj_names  = 'GP_fiber GP_char GP_gas'
-    hj_names  = 'h_fiber h_char h_gas'
-    args = 'eta1 eta2 w'
+    variable = etaa0
+    Fj_names  = 'GP_a GP_b GP_g'
+    hj_names  = 'h_a h_b h_g'
+    args = 'etab0 etag0 w'
   [../]
 
-  [./AC_int_0]
+  [./AC_int_a0]
     type = ACInterface
-    variable = eta0
+    variable = etaa0
     kappa_name = kappa
   [../]
 
-  [./eta0_dot]
+  [./etaa0_dot]
     type = TimeDerivative
-    variable = eta0
+    variable = etaa0
   [../]
 
   #----------------------------------------------------------------------------#
-  # Kernels for eta1 - char
-  [./AC_bulk_1]
+  # Kernels for etab0 - char
+  [./AC_bulk_b0]
     type = ACGrGrMulti
-    variable = eta1
-    v =           'eta0 eta2'
-    gamma_names = 'gab   gbb'
+    variable = etab0
+    v =           'etaa0 etag0'
+    gamma_names = 'gab   gbg'
   [../]
 
-  [./AC_switch_1]
+  [./AC_switch_b0]
     type = ACSwitching
-    variable = eta1
-    Fj_names  = 'GP_fiber GP_char GP_gas'
-    hj_names  = 'h_fiber h_char h_gas'
-    args = 'eta0 eta2 w'
+    variable = etab0
+    Fj_names  = 'GP_a GP_b GP_g'
+    hj_names  = 'h_a h_b h_g'
+    args = 'etaa0 etag0 w'
   [../]
 
-  [./AC_int_1]
+  [./AC_int_b0]
     type = ACInterface
-    variable = eta1
+    variable = etab0
     kappa_name = kappa
   [../]
 
-  [./eta1_dot]
+  [./etab0_dot]
     type = TimeDerivative
-    variable = eta1
+    variable = etab0
   [../]
 
   #----------------------------------------------------------------------------#
-  # Kernels for eta2 - gas
-  [./AC_bulk_2]
+  # Kernels for etag0 - gas
+  [./AC_bulk_g0]
     type = ACGrGrMulti
-    variable = eta2
-    v =           'eta0 eta1'
-    gamma_names = 'gab   gbb'
+    variable = etag0
+    v =           'etaa0 etab0'
+    gamma_names = 'gab   gbg'
   [../]
 
-  [./AC_switch_2]
+  [./AC_switch_g0]
     type = ACSwitching
-    variable = eta2
-    Fj_names  = 'GP_fiber GP_char GP_gas'
-    hj_names  = 'h_fiber h_char h_gas'
-    args = 'eta0 eta1 w'
+    variable = etag0
+    Fj_names  = 'GP_a GP_b GP_g'
+    hj_names  = 'h_a h_b h_g'
+    args = 'etaa0 etab0 w'
   [../]
 
-  [./AC_int_2]
+  [./AC_int_g0]
     type = ACInterface
-    variable = eta2
+    variable = etag0
     kappa_name = kappa
   [../]
 
-  [./eta2_dot]
+  [./etag0_dot]
     type = TimeDerivative
-    variable = eta2
+    variable = etag0
   [../]
 
   #----------------------------------------------------------------------------#
@@ -193,31 +187,31 @@
 
   #----------------------------------------------------------------------------#
   # Coupled Kernels
-  [./coupled_eta0dot]
+  [./coupled_etaa0dot]
     type = CoupledSwitchingTimeDerivative
     variable = w
-    v = eta0
-    Fj_names = 'x_fiber x_char x_gas'
-    hj_names = 'h_fiber h_char  h_gas'
-    args = 'eta0 eta1 eta2'
+    v = etaa0
+    Fj_names  = 'rho_a  rho_b   rho_g'
+    hj_names  = 'h_a    h_b     h_g'
+    args      = 'etaa0  etab0   etag0'
   [../]
 
-  [./coupled_eta1dot]
+  [./coupled_etab0dot]
     type = CoupledSwitchingTimeDerivative
     variable = w
-    v = eta1
-    Fj_names = 'x_fiber x_char  x_gas'
-    hj_names = 'h_fiber h_char  h_gas'
-    args = 'eta0 eta1  eta2'
+    v = etab0
+    Fj_names  = 'rho_a  rho_b   rho_g'
+    hj_names  = 'h_a    h_b     h_g'
+    args      = 'etaa0  etab0   etag0'
   [../]
 
-  [./coupled_eta2dot]
+  [./coupled_etag0dot]
     type = CoupledSwitchingTimeDerivative
     variable = w
-    v = eta2
-    Fj_names = 'x_fiber x_char x_gas'
-    hj_names = 'h_fiber h_char h_gas'
-    args = 'eta0 eta1 eta2'
+    v = etag0
+    Fj_names  = 'rho_a  rho_b   rho_g'
+    hj_names  = 'h_a    h_b     h_g'
+    args      = 'etaa0  etab0   etag0'
   [../]
 []
 
@@ -237,8 +231,8 @@
   #----------------------------------------------------------------------------#
   [./const]
     type = GenericConstantMaterial
-    prop_names =  'kappa_c  kappa   L   D    chi  Vm   ka    caeq kb    cbeq  gab gbb mu'
-    prop_values = '0        1       1.0 1.0  1.0  1.0  10.0  0.1  10.0  0.9   4.5 1.5 1.0'
+    prop_names =  'kappa_c  kappa   L   D    chi  Vm   ka    caeq kb    cbeq  gab gag gbg mu'
+    prop_values = '0        1       1.0 1.0  1.0  1.0  10.0  0.1  10.0  0.9   4.5 2.5 1.5 1.0'
   [../]
 
   [./Mobility]
@@ -255,40 +249,34 @@
   # Switching Functions
   [./switch_fiber]
     type = SwitchingFunctionMultiPhaseMaterial
-    h_name = h_fiber
-
-    all_etas = 'eta0 eta1 eta2'
-    phase_etas = 'eta0'
-
+    h_name = h_a
+    all_etas = 'etaa0 etab0 etag0'
+    phase_etas = 'etaa0'
     outputs = exodus
-    output_properties = h_fiber
+    output_properties = h_a
   [../]
   [./switch_char]
     type = SwitchingFunctionMultiPhaseMaterial
-    h_name = h_char
-
-    all_etas = 'eta0 eta1 eta2'
-    phase_etas = 'eta1'
-
+    h_name = h_b
+    all_etas = 'etaa0 etab0 etag0'
+    phase_etas = 'etab0'
     outputs = exodus
-    output_properties = h_char
+    output_properties = h_b
   [../]
   [./switch_gas]
     type = SwitchingFunctionMultiPhaseMaterial
-    h_name = h_gas
-
-    all_etas = 'eta0 eta1 eta2'
-    phase_etas = 'eta2'
-
+    h_name = h_g
+    all_etas = 'etaa0 etab0 etag0'
+    phase_etas = 'etag0'
     outputs = exodus
-    output_properties = h_gas
+    output_properties = h_g
   [../]
 
   #----------------------------------------------------------------------------#
-  # Concentrations
-  [./x_fiber]
+  # Number densities
+  [./rho_a]
     type = DerivativeParsedMaterial
-    f_name = x_fiber
+    f_name = rho_a
 
     function = 'w/(Va*A) + x_eq'
 
@@ -299,14 +287,14 @@
     constant_expressions = '0.9    10.0'
 
     outputs = exodus
-    output_properties = x_fiber
+    output_properties = rho_a
   [../]
 
-  [./x_char]
+  [./rho_b]
     type = DerivativeParsedMaterial
-    f_name = x_char
+    f_name = rho_b
 
-    function = 'w/(Va*A) + x_eq'
+    function = '1/Va*(w/(Va*A) + x_eq)'
 
     args = 'w'
     material_property_names = 'Va'
@@ -315,14 +303,14 @@
     constant_expressions = '0.7    10.0'
 
     outputs = exodus
-    output_properties = x_char
+    output_properties = rho_b
   [../]
 
-  [./x_gas]
+  [./rho_g]
     type = DerivativeParsedMaterial
-    f_name = x_gas
+    f_name = rho_g
 
-    function = 'w/(Va*A) + x_eq'
+    function = '1/Va*(w/(Va*A) + x_eq)'
 
     args = 'w'
     material_property_names = 'Va'
@@ -331,15 +319,15 @@
     constant_expressions = '0.1     10.0'
 
     outputs = exodus
-    output_properties = x_gas
+    output_properties = rho_g
   [../]
 
   #----------------------------------------------------------------------------#
   # Grand Potentials
   # Grand potential density of the fiber phase according to a parabolic free energy
-  [./GP_fiber]
+  [./GP_a]
     type = DerivativeParsedMaterial
-    f_name = GP_fiber
+    f_name = GP_a
 
     function = '-0.5*w^2/(Va^2 *A) - x_eq*w/Va +Ref'
 
@@ -352,32 +340,32 @@
     derivative_order = 2
 
     outputs = exodus
-    output_properties = GP_fiber
+    output_properties = GP_a
   [../]
 
   # Grand potential density of the char phase according to a parabolic free energy
-  [./GP_char]
+  [./GP_b]
     type = DerivativeParsedMaterial
-    f_name = GP_char
+    f_name = GP_b
 
     function = '-0.5*w^2/(Va^2 *A) - x_eq*w/Va +Ref'
 
     args = 'w'
     material_property_names = 'Va'
 
-    constant_names =       'x_eq      A            Ref'
+    constant_names =       'x_eq      A      Ref'
     constant_expressions = '0.7    10.0      0'
 
     derivative_order = 2
 
     outputs = exodus
-    output_properties = GP_char
+    output_properties = GP_b
   [../]
 
   # Grand potential density of the gas phase according to a parabolic free energy
-  [./GP_gas]
+  [./GP_g]
     type = DerivativeParsedMaterial
-    f_name = GP_gas
+    f_name = GP_g
 
     function = '-0.5*w^2/(Va^2 *A) - x_eq*w/Va'
 
@@ -390,7 +378,7 @@
     derivative_order = 2
 
     outputs = exodus
-    output_properties = GP_gas
+    output_properties = GP_g
   [../]
 []
 
@@ -407,8 +395,13 @@
   type = Transient
   scheme = bdf2
 
-  petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_pc_type -pc_asm_overlap'
-  petsc_options_value = 'asm      31                  lu           1'
+  #solve_type = NEWTON
+  solve_type = PJFNK
+  petsc_options_iname = -pc_type
+  petsc_options_value = asm
+
+  #petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_pc_type -pc_asm_overlap'
+  #petsc_options_value = 'asm      31                  lu           1'
 
   l_tol = 1.0e-3
   nl_rel_tol = 1.0e-8
