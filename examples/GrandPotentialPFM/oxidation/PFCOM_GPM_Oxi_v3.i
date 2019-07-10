@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------#
 # PFCOM using the grand potential model
 # Using function IC for a hyperbolic tangent profile
-# EQUILIBRIUM STATE working well. 
+# Reaction rate from paper
 #------------------------------------------------------------------------------#
 [Mesh]
   # length scale -> microns
@@ -89,11 +89,11 @@
       mobilities =          'D_c        D_o'
       susceptibilities =    'chi        chi'
 
-      #Fj_names for ACInterface:
+      #Fj_names for coupled eta dot:
       free_energies_w =            'x_c_fiber x_c_gas
                                     x_o_fiber x_o_gas'
 
-      #hj_names for ACInterface:
+      #hj_names for ACSwitching:
       switching_function_names =   'h_fiber  h_gas'
 
       #Fj_names for ACSwitching:
@@ -140,7 +140,7 @@
 [Kernels]
   [./Recomb_C]
     type = Reaction_GPM
-    mob_name = R
+    mob_name = K
     atomic_vol = Va
     variable = w_c
     v = rho_c
@@ -205,12 +205,13 @@
   # LH1 CO formation from Swaminathan-Gopalan @2000K
   [./reaction_rates]
     type = ParsedMaterial
-    f_name = R
+    f_name = K
     args = 'rho_o rho_c'
 
-    constant_names = 'RR'
-    constant_expressions = '-1.1548e-04'
-    function = 'if(rho_o<0.0,0,if(rho_c<0.0,0,RR))'
+    constant_names = 'K_c'
+    #constant_expressions = '-1.1548e-04'
+    constant_expressions = '-1.1548'
+    function = 'if(rho_o<0.0,0,if(rho_c<0.0,0,K_c))'
 
     outputs = exodus
   [../]
@@ -445,7 +446,7 @@
 [Outputs]
   exodus = true
   csv = true
-  file_base = ./results_v2/PFCOM_GPM_Oxi_v2_out
+  file_base = ./results_v3/PFCOM_GPM_Oxi_v3_out
   execute_on = 'INITIAL TIMESTEP_END FINAL'
   perf_graph = true
 []

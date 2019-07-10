@@ -19,7 +19,7 @@
 
 #------------------------------------------------------------------------------#
 [Variables]
-  [./w]
+  [./w_c]
   [../]
   #Phase alpha: carbon fiber
   [./etaa0]
@@ -71,7 +71,7 @@
   [../]
   [./IC_w]
     type = ConstantIC
-    variable = w
+    variable = w_c
     value = 0
   [../]
 []
@@ -110,7 +110,7 @@
     variable = etaa0
     Fj_names  = 'omega_a omega_b omega_g'
     hj_names  = 'h_a     h_b     h_g'
-    args = 'etab0 etag0 w'
+    args = 'etab0 etag0 w_c'
   [../]
 
   [./ACa0_int]
@@ -138,7 +138,7 @@
     variable = etab0
     Fj_names  = 'omega_a omega_b omega_g'
     hj_names  = 'h_a     h_b     h_g'
-    args = 'etaa0 etag0 w'
+    args = 'etaa0 etag0 w_c'
   [../]
 
   [./ACb0_int]
@@ -166,7 +166,7 @@
     variable = etag0
     Fj_names  = 'omega_a omega_b omega_g'
     hj_names  = 'h_a     h_b     h_g'
-    args = 'etaa0 etab0 w'
+    args = 'etaa0 etab0 w_c'
   [../]
 
   [./ACd0_int]
@@ -182,16 +182,16 @@
 
   #----------------------------------------------------------------------------#
   # Chemical potential kernels
-  [./w_dot]
+  [./w_c_dot]
     type = SusceptibilityTimeDerivative
-    variable = w
+    variable = w_c
     f_name = chi
     args = '' # in this case chi (the susceptibility) is simply a constant
   [../]
 
   [./Diffusion]
     type = MatDiffusion
-    variable = w
+    variable = w_c
     D_name = Dchi
     args = ''
   [../]
@@ -200,7 +200,7 @@
   # Coupled kernels
   [./coupled_etaa0dot]
     type = CoupledSwitchingTimeDerivative
-    variable = w
+    variable = w_c
     v = etaa0
     Fj_names = 'rho_a rho_b rho_g'
     hj_names = 'h_a   h_b   h_g'
@@ -209,7 +209,7 @@
 
   [./coupled_etab0dot]
     type = CoupledSwitchingTimeDerivative
-    variable = w
+    variable = w_c
     v = etab0
     Fj_names = 'rho_a rho_b rho_g'
     hj_names = 'h_a   h_b   h_g'
@@ -218,7 +218,7 @@
 
   [./coupled_etag0dot]
     type = CoupledSwitchingTimeDerivative
-    variable = w
+    variable = w_c
     v = etag0
     Fj_names = 'rho_a rho_b rho_g'
     hj_names = 'h_a   h_b   h_g'
@@ -268,11 +268,11 @@
   # Grand potential densities
   [./omega_a]
     type = DerivativeParsedMaterial
-    args = 'w'
+    args = 'w_c'
     f_name = omega_a
 
-    material_property_names = 'Va Aa xeq_a'
-    function = '-0.5*w^2/Va^2/Aa - w/Va*xeq_a'
+    material_property_names = 'Va Aa xeq_c_a'
+    function = '-0.5*w_c^2/Va^2/Aa - w_c/Va*xeq_c_a'
 
     derivative_order = 2
 
@@ -282,11 +282,11 @@
 
   [./omega_b]
     type = DerivativeParsedMaterial
-    args = 'w'
+    args = 'w_c'
     f_name = omega_b
 
-    material_property_names = 'Va Ab xeq_b'
-    function = '-0.5*w^2/Va^2/Ab-w/Va*xeq_b'
+    material_property_names = 'Va Ab xeq_c_b'
+    function = '-0.5*w_c^2/Va^2/Ab-w_c/Va*xeq_c_b'
 
     derivative_order = 2
 
@@ -296,11 +296,11 @@
 
   [./omega_g]
     type = DerivativeParsedMaterial
-    args = 'w'
+    args = 'w_c'
     f_name = omega_g
 
-    material_property_names = 'Va Ag xeq_g'
-    function = '-0.5*w^2/Va^2/Ag-w/Va*xeq_g'
+    material_property_names = 'Va Ag xeq_c_g'
+    function = '-0.5*w_c^2/Va^2/Ag-w_c/Va*xeq_c_g'
 
     derivative_order = 2
 
@@ -312,10 +312,10 @@
   # Number densities
   [./rho_a]
     type = DerivativeParsedMaterial
-    args = 'w'
+    args = 'w_c'
     f_name = rho_a
-    material_property_names = 'Va Aa xeq_a'
-    function = 'w/Va^2/Aa + xeq_a/Va'
+    material_property_names = 'Va Aa xeq_c_a'
+    function = 'w_c/Va^2/Aa + xeq_c_a/Va'
     derivative_order = 2
 
     outputs = exodus
@@ -324,10 +324,10 @@
 
   [./rho_b]
     type = DerivativeParsedMaterial
-    args = 'w'
+    args = 'w_c'
     f_name = rho_b
-    material_property_names = 'Va Ab xeq_b'
-    function = 'w/Va^2/Ab + xeq_b/Va'
+    material_property_names = 'Va Ab xeq_c_b'
+    function = 'w_c/Va^2/Ab + xeq_c_b/Va'
     derivative_order = 2
 
     outputs = exodus
@@ -336,10 +336,10 @@
 
   [./rho_g]
     type = DerivativeParsedMaterial
-    args = 'w'
+    args = 'w_c'
     f_name = rho_g
-    material_property_names = 'Va Ag xeq_g'
-    function = 'w/Va^2/Ag + xeq_g/Va'
+    material_property_names = 'Va Ag xeq_c_g'
+    function = 'w_c/Va^2/Ag + xeq_c_g/Va'
     derivative_order = 2
 
     outputs = exodus
@@ -376,7 +376,7 @@
 
   [./carbon_params]
     type = GenericConstantMaterial
-    prop_names  = 'Aa       xeq_a    Ab      xeq_b     Ag       xeq_g'
+    prop_names  = 'Aa       xeq_c_a    Ab      xeq_c_b     Ag       xeq_c_g'
     prop_values = '34.535   0.9      10.0    0.7       100.0    0.1'
   [../]
 

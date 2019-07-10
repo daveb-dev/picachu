@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------#
 # 3-phase GPM simulation
-# Initial condition
+# Carbon and oxygen at equilibrium: working
 #------------------------------------------------------------------------------#
 [Mesh]
   type = GeneratedMesh
@@ -14,13 +14,16 @@
   ymax = 12
   ny = 120
 
-  uniform_refine = 2
+  uniform_refine = 1
 []
 
 #------------------------------------------------------------------------------#
 [Variables]
-  [./w]
+  [./w_c]
   [../]
+  [./w_o]
+  [../]
+
   #Phase alpha: carbon fiber
   [./etaa0]
   [../]
@@ -33,7 +36,7 @@
 []
 
 #------------------------------------------------------------------------------#
-# Bnds stuff
+#Bnds stuff
 [AuxVariables]
   [./bnds]
     order = FIRST
@@ -69,10 +72,15 @@
     variable = etag0
     function = ic_func_etag0
   [../]
-  [./IC_w]
+  [./IC_w_c]
     type = ConstantIC
-    variable = w
-    value = 0
+    variable = w_c
+    value = 0.0
+  [../]
+  [./IC_w_o]
+    type = ConstantIC
+    variable = w_o
+    value = 0.0
   [../]
 []
 
@@ -93,7 +101,6 @@
   [../]
 []
 
-
 #------------------------------------------------------------------------------#
 [Kernels]
   #----------------------------------------------------------------------------#
@@ -110,7 +117,7 @@
     variable = etaa0
     Fj_names  = 'omega_a omega_b omega_g'
     hj_names  = 'h_a     h_b     h_g'
-    args = 'etab0 etag0 w'
+    args = 'etab0 etag0 w_c w_o'
   [../]
 
   [./ACa0_int]
@@ -119,7 +126,7 @@
     kappa_name = kappa
   [../]
 
-  [./ea0_dot]
+  [./etaa0_dot]
     type = TimeDerivative
     variable = etaa0
   [../]
@@ -138,7 +145,7 @@
     variable = etab0
     Fj_names  = 'omega_a omega_b omega_g'
     hj_names  = 'h_a     h_b     h_g'
-    args = 'etaa0 etag0 w'
+    args = 'etaa0 etag0 w_c w_o'
   [../]
 
   [./ACb0_int]
@@ -147,83 +154,135 @@
     kappa_name = kappa
   [../]
 
-  [./eb0_dot]
+  [./etab0_dot]
     type = TimeDerivative
     variable = etab0
   [../]
 
   #----------------------------------------------------------------------------#
   # etag0 kernels
-  [./ACd0_bulk]
+  [./ACg0_bulk]
     type = ACGrGrMulti
     variable = etag0
     v =           'etaa0 etab0'
     gamma_names = 'gag   gbg'
   [../]
 
-  [./ACd0_sw]
+  [./ACg0_sw]
     type = ACSwitching
     variable = etag0
     Fj_names  = 'omega_a omega_b omega_g'
     hj_names  = 'h_a     h_b     h_g'
-    args = 'etaa0 etab0 w'
+    args = 'etaa0 etab0 w_c w_o'
   [../]
 
-  [./ACd0_int]
+  [./ACg0_int]
     type = ACInterface
     variable = etag0
     kappa_name = kappa
   [../]
 
-  [./ed0_dot]
+  [./etag0_dot]
     type = TimeDerivative
     variable = etag0
   [../]
 
   #----------------------------------------------------------------------------#
   # Chemical potential kernels
-  [./w_dot]
+  #----------------------------------------------------------------------------#
+  # Carbon
+  [./w_c_dot]
     type = SusceptibilityTimeDerivative
-    variable = w
-    f_name = chi
+    variable = w_c
+    f_name = chi_c
     args = '' # in this case chi (the susceptibility) is simply a constant
   [../]
 
-  [./Diffusion]
+  [./diffusion_c]
     type = MatDiffusion
-    variable = w
-    D_name = Dchi
+    variable = w_c
+    D_name = Dchi_c
+    args = ''
+  [../]
+
+  #----------------------------------------------------------------------------#
+  # Oxygen
+  [./w_o_dot]
+    type = SusceptibilityTimeDerivative
+    variable = w_o
+    f_name = chi_o
+    args = '' # in this case chi (the susceptibility) is simply a constant
+  [../]
+
+  [./diffusion_o]
+    type = MatDiffusion
+    variable = w_o
+    D_name = Dchi_o
     args = ''
   [../]
 
   #----------------------------------------------------------------------------#
   # Coupled kernels
-  [./coupled_etaa0dot]
+  #----------------------------------------------------------------------------#
+  # Carbon
+  [./coupled_etaa0dot_c]
     type = CoupledSwitchingTimeDerivative
-    variable = w
+    variable = w_c
     v = etaa0
-    Fj_names = 'rho_a rho_b rho_g'
+    Fj_names = 'rho_c_a rho_c_b rho_c_g'
     hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0'
+    args = 'etaa0 etab0 etag0 w_o'
   [../]
 
-  [./coupled_etab0dot]
+  [./coupled_etab0dot_c]
     type = CoupledSwitchingTimeDerivative
-    variable = w
+    variable = w_c
     v = etab0
-    Fj_names = 'rho_a rho_b rho_g'
+    Fj_names = 'rho_c_a rho_c_b rho_c_g'
     hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0'
+    args = 'etaa0 etab0 etag0 w_o'
   [../]
 
-  [./coupled_etag0dot]
+  [./coupled_etag0dot_c]
     type = CoupledSwitchingTimeDerivative
-    variable = w
+    variable = w_c
     v = etag0
-    Fj_names = 'rho_a rho_b rho_g'
+    Fj_names = 'rho_c_a rho_c_b rho_c_g'
     hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0'
+    args = 'etaa0 etab0 etag0 w_o'
   [../]
+
+  #----------------------------------------------------------------------------#
+  # Oxygen
+  [./coupled_etaa0dot_o]
+    type = CoupledSwitchingTimeDerivative
+    variable = w_o
+    v = etaa0
+    Fj_names = 'rho_o_a rho_o_b rho_o_g'
+    hj_names = 'h_a   h_b   h_g'
+    args = 'etaa0 etab0 etag0 w_c'
+  [../]
+
+  [./coupled_etab0dot_o]
+    type = CoupledSwitchingTimeDerivative
+    variable = w_o
+    v = etab0
+    Fj_names = 'rho_o_a rho_o_b rho_o_g'
+    hj_names = 'h_a   h_b   h_g'
+    args = 'etaa0 etab0 etag0 w_c'
+  [../]
+
+  [./coupled_etag0dot_o]
+    type = CoupledSwitchingTimeDerivative
+    variable = w_o
+    v = etag0
+    Fj_names = 'rho_o_a rho_o_b rho_o_g'
+    hj_names = 'h_a   h_b   h_g'
+    args = 'etaa0 etab0 etag0 w_c'
+  [../]
+
+  #----------------------------------------------------------------------------#
+  # END OF KERNELS
 []
 
 
@@ -268,92 +327,189 @@
   # Grand potential densities
   [./omega_a]
     type = DerivativeParsedMaterial
-    args = 'w'
     f_name = omega_a
+    args = 'w_c w_o'
 
-    material_property_names = 'Va Aa xeq_a'
-    function = '-0.5*w^2/Va^2/Aa - w/Va*xeq_a'
+    function = '-0.5*w_c^2/(Va^2 *A_c_a) - xeq_c_a*w_c/Va
+                -0.5*w_o^2/(Va^2 *A_o_a) - xeq_o_a*w_o/Va'
+
+    material_property_names = 'Va A_c_a A_o_a xeq_c_a xeq_o_a'
 
     derivative_order = 2
-
     outputs = exodus
     output_properties = omega_a
   [../]
 
   [./omega_b]
     type = DerivativeParsedMaterial
-    args = 'w'
     f_name = omega_b
 
-    material_property_names = 'Va Ab xeq_b'
-    function = '-0.5*w^2/Va^2/Ab-w/Va*xeq_b'
+    args = 'w_c w_o'
+
+    function = '-0.5*w_c^2/(Va^2 *A_c_b) - xeq_c_b*w_c/Va
+                -0.5*w_o^2/(Va^2 *A_o_b) - xeq_o_b*w_o/Va'
+
+    material_property_names = 'Va A_c_b A_o_b xeq_c_b xeq_o_b'
 
     derivative_order = 2
-
     outputs = exodus
     output_properties = omega_b
   [../]
 
   [./omega_g]
     type = DerivativeParsedMaterial
-    args = 'w'
     f_name = omega_g
 
-    material_property_names = 'Va Ag xeq_g'
-    function = '-0.5*w^2/Va^2/Ag-w/Va*xeq_g'
+    args = 'w_c w_o'
+
+    function = '-0.5*w_c^2/(Va^2 *A_c_g) - xeq_c_g*w_c/Va
+                -0.5*w_o^2/(Va^2 *A_o_g) - xeq_o_g*w_o/Va'
+
+    material_property_names = 'Va A_c_g A_o_g xeq_c_g xeq_o_g'
 
     derivative_order = 2
-
     outputs = exodus
     output_properties = omega_g
   [../]
 
   #----------------------------------------------------------------------------#
-  # Number densities
-  [./rho_a]
+  # CARBON
+  [./rho_c_a]
     type = DerivativeParsedMaterial
-    args = 'w'
-    f_name = rho_a
-    material_property_names = 'Va Aa xeq_a'
-    function = 'w/Va^2/Aa + xeq_a/Va'
-    derivative_order = 2
+    f_name = rho_c_a
+    args = 'w_c'
 
+    function = 'w_c/(A_c_a*Va^2) + xeq_c_a/Va'
+
+    material_property_names = 'Va A_c_a xeq_c_a'
+
+    derivative_order = 2
     outputs = exodus
-    output_properties = rho_a
+    output_properties = rho_c_a
   [../]
 
-  [./rho_b]
+  [./rho_c_b]
     type = DerivativeParsedMaterial
-    args = 'w'
-    f_name = rho_b
-    material_property_names = 'Va Ab xeq_b'
-    function = 'w/Va^2/Ab + xeq_b/Va'
-    derivative_order = 2
+    f_name = rho_c_b
+    args = 'w_c'
 
+    function = 'w_c/(A_c_b*Va^2) + xeq_c_b/Va'
+
+    material_property_names = 'Va A_c_b xeq_c_b'
+
+    derivative_order = 2
     outputs = exodus
-    output_properties = rho_b
+    output_properties = rho_c_b
   [../]
 
-  [./rho_g]
+  [./rho_c_g]
     type = DerivativeParsedMaterial
-    args = 'w'
-    f_name = rho_g
-    material_property_names = 'Va Ag xeq_g'
-    function = 'w/Va^2/Ag + xeq_g/Va'
+    f_name = rho_c_g
+    args = 'w_c'
+
+    function = 'w_c/(A_c_g*Va^2) + xeq_c_g/Va'
+
+    material_property_names = 'Va A_c_g xeq_c_g'
+
     derivative_order = 2
+    outputs = exodus
+    output_properties = rho_c_g
+  [../]
+
+  [./rho_c]
+    type = DerivativeParsedMaterial
+    f_name = rho_c
+    args = 'w_c etaa0 etab0 etag0'
+
+    function = 'h_a*rho_c_a + h_b*rho_c_b + h_g*rho_c_g'
+
+    material_property_names = 'h_a h_b h_g rho_c_a rho_c_b rho_c_g'
 
     outputs = exodus
-    output_properties = rho_g
+    output_properties = rho_c
+  [../]
+
+  [./x_c]
+    type = DerivativeParsedMaterial
+    f_name = x_c
+    args = 'w_c etaa0 etab0 etag0'
+
+    function = 'Va*rho_c'
+
+    material_property_names = 'Va rho_c'
+
+    outputs = exodus
+    output_properties = x_c
   [../]
 
   #----------------------------------------------------------------------------#
-  # Overall concetration
-  [./c]
-    type = ParsedMaterial
-    material_property_names = 'Va rho_a rho_b rho_g h_a h_b h_g'
-    function = 'Va * (h_a * rho_a + h_b * rho_b + h_g * rho_g)'
-    f_name = c
+  # OXYGEN
+  [./rho_o_a]
+    type = DerivativeParsedMaterial
+    f_name = rho_o_a
+    args = 'w_o'
+
+    function = 'w_o/(A_o_a*Va^2) + xeq_o_a/Va'
+
+    material_property_names = 'Va A_o_a xeq_o_a'
+
+    derivative_order = 2
     outputs = exodus
+    output_properties = rho_o_a
+  [../]
+
+  [./rho_o_b]
+    type = DerivativeParsedMaterial
+    f_name = rho_o_b
+    args = 'w_o'
+
+    function = 'w_o/(A_o_b*Va^2) + xeq_o_b/Va'
+
+    material_property_names = 'Va A_o_b xeq_o_b'
+
+    derivative_order = 2
+    outputs = exodus
+    output_properties = rho_o_b
+  [../]
+
+  [./rho_o_g]
+    type = DerivativeParsedMaterial
+    f_name = rho_o_g
+    args = 'w_o'
+
+    function = 'w_o/(A_o_g*Va^2) + xeq_o_g/Va'
+
+    material_property_names = 'Va A_o_g xeq_o_g'
+
+    derivative_order = 2
+    outputs = exodus
+    output_properties = rho_o_g
+  [../]
+
+  [./rho_o]
+    type = DerivativeParsedMaterial
+    f_name = rho_o
+    args = 'w_o etaa0 etab0 etag0'
+
+    function = 'h_a*rho_o_a + h_b*rho_o_b + h_g*rho_o_g'
+
+    material_property_names = 'h_a h_b h_g rho_o_a rho_o_b rho_o_g'
+
+    outputs = exodus
+    output_properties = rho_o
+  [../]
+
+  [./x_o]
+    type = DerivativeParsedMaterial
+    f_name = x_o
+    args = 'w_o etaa0 etab0 etag0'
+
+    function = 'Va*rho_o'
+
+    material_property_names = 'Va rho_o'
+
+    outputs = exodus
+    output_properties = x_o
   [../]
 
   #----------------------------------------------------------------------------#
@@ -374,30 +530,92 @@
     prop_values = '1.5    1.5     1.5     1.0'
   [../]
 
-  [./carbon_params]
+  [./params_carbon]
     type = GenericConstantMaterial
-    prop_names  = 'Aa       xeq_a    Ab      xeq_b     Ag       xeq_g'
-    prop_values = '34.535   0.9      10.0    0.7       100.0    0.1'
+    prop_names  = 'A_c_a    xeq_c_a
+                   A_c_b    xeq_c_b
+                   A_c_g    xeq_c_g'
+    prop_values = '34.535   0.9
+                   10.0     0.7
+                   100.0    0.1'
   [../]
 
-  [./Mobility]
-    type = DerivativeParsedMaterial
-    f_name = Dchi
-    material_property_names = 'D chi'
-    function = 'D*chi'
-    derivative_order = 2
-    #outputs = exodus
+  [./params_oxygen]
+    type = GenericConstantMaterial
+    prop_names  = 'A_o_a    xeq_o_a
+                   A_o_b    xeq_o_b
+                   A_o_g    xeq_o_g'
+    prop_values = '1e4      0.1
+                   10.0     0.3
+                   10.0     0.9'
   [../]
 
-  [./chi]
-    # Not sure why, but I kept this way because it works
+  [./chi_c]
     type = DerivativeParsedMaterial
-    f_name = chi
-    material_property_names = 'Va h_a Aa h_b Ab h_g Ag'
-    function = '(h_a/Aa + h_b/Ab + h_g/Ag) / Va^2'
+    f_name = chi_c
+
+    function = '(h_a/A_c_a + h_b/A_c_b + h_g/A_c_g) / Va^2'
+
+    material_property_names = 'Va h_a A_c_a h_b A_c_b h_g A_c_g'
+
     derivative_order = 2
     outputs = exodus
+    output_properties = chi_c
   [../]
+
+  [./chi_o]
+    type = DerivativeParsedMaterial
+    f_name = chi_o
+
+    function = '(h_a/A_o_a + h_b/A_o_b + h_g/A_o_g) / Va^2'
+
+    material_property_names = 'Va h_a A_o_a h_b A_o_b h_g A_o_g'
+
+    derivative_order = 2
+    outputs = exodus
+    output_properties = chi_o
+  [../]
+
+  # Diffusivities
+    [./diff_c]
+      type = DerivativeParsedMaterial
+      f_name = D_c
+      args = 'etaa0 etab0 etag0'
+      material_property_names = 'h_a h_b h_g'
+      function = '(h_a*0.1 + h_b*0.1 +h_g*10)'
+
+      outputs = exodus
+      output_properties = D_c
+    [../]
+
+    [./diff_o]
+      type = DerivativeParsedMaterial
+      f_name = D_o
+      args = 'etaa0 etab0 etag0'
+      material_property_names = 'h_a h_b h_g'
+      function = '(h_a*0.1 + h_b*0.1 +h_g*10)'
+
+      outputs = exodus
+      output_properties = D_o
+    [../]
+
+    [./mob_c]
+      type = DerivativeParsedMaterial
+      f_name = Dchi_c
+      material_property_names = 'D_c chi_c'
+      function = 'D_c*chi_c'
+      derivative_order = 2
+      #outputs = exodus
+    [../]
+
+    [./mob_o]
+      type = DerivativeParsedMaterial
+      f_name = Dchi_o
+      material_property_names = 'D_o chi_o'
+      function = 'D_o*chi_o'
+      derivative_order = 2
+      #outputs = exodus
+    [../]
 []
 
 
@@ -431,14 +649,19 @@
   start_time = 0.0
   num_steps = 20
 
-  dt = 1.0
+  [./Predictor]
+    type = SimplePredictor
+    scale = 1
+  [../]
 
-  # [./TimeStepper]
-  #   type = IterationAdaptiveDT
-  #   dt = 1.0
-  #   optimal_iterations = 8
-  #   iteration_window = 2
-  # [../]
+  [./TimeStepper]
+    type = IterationAdaptiveDT
+    dt = 0.1
+    growth_factor = 1.2
+    cutback_factor = 0.8
+    optimal_iterations = 12
+    iteration_window = 0
+  [../]
 []
 
 
