@@ -781,7 +781,7 @@
 [Outputs]
   exodus = true
   csv = false
-  #file_base = ./results/GPM_vx_out
+  file_base = ./results/
   execute_on = 'INITIAL TIMESTEP_END FINAL'
   append_date = true
 
