@@ -1,0 +1,7 @@
+[Tests]
+[./Parabolic_GP_Material]
+  type = 'Exodiff'
+  input = 'Parabolic_GP_Material.i'
+  exodiff = 'Parabolic_GP_Material_out.e'
+[../]
+[]
