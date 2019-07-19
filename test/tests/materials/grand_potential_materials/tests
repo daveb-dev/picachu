@@ -4,4 +4,11 @@
   input = 'Parabolic_GP_Material.i'
   exodiff = 'Parabolic_GP_Material_out.e'
 [../]
+
+
+[./Multi_Parabolic_GP_Material]
+  type = 'Exodiff'
+  input = 'Multi_Parabolic_GP_Material.i'
+  exodiff = 'Multi_Parabolic_GP_Material_out.e'
+[../]
 []
