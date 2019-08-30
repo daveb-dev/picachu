@@ -56,12 +56,18 @@ Reaction_GPM::initialSetup()
 Real
 Reaction_GPM::computeQpResidual()
 {
+  if ( (_w[_qp] < 0) || (_v[_qp] < 0)){
+    return 0;
+  }
   return -_R[_qp] * _Va[_qp] * _test[_i][_qp] * _v[_qp] * _w[_qp];
 }
 
 Real
 Reaction_GPM::computeQpJacobian()
 {
+  if ( (_w[_qp] < 0) || (_v[_qp] < 0)){
+    return 0;
+  }
   return -_dRdu[_qp] * _Va[_qp] * _v[_qp] * _w[_qp] * _phi[_j][_qp]  * _test[_i][_qp];
 }
 
@@ -71,12 +77,18 @@ Reaction_GPM::computeQpOffDiagJacobian(unsigned int jvar)
   // first handle the case where jvar is a coupled variable v being added to residual
   // the first term in the sum just multiplies by L which is always needed
   // the second term accounts for cases where L depends on v
-  if (jvar == _v_var)
+  if (jvar == _v_var){
+    if ( (_w[_qp] < 0) || (_v[_qp] < 0)){
+      return 0;
+    }
     return -(_R[_qp] + _dRdv[_qp] * _v[_qp]) * _Va[_qp] * _w[_qp] * _phi[_j][_qp] * _test[_i][_qp];
-
-  if (jvar == _w_var)
+  }
+  if (jvar == _w_var){
+    if ( (_w[_qp] < 0) || (_v[_qp] < 0)){
+      return 0;
+    }
     return -(_R[_qp] + _dRdw[_qp] * _w[_qp]) * _Va[_qp] * _v[_qp] * _phi[_j][_qp] * _test[_i][_qp];
-
+  }
   //  for all other vars get the coupled variable jvar is referring to
   const unsigned int cvar = mapJvarToCvar(jvar);
 

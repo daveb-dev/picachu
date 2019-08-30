@@ -7,16 +7,15 @@
   type = GeneratedMesh
   dim = 2
 
-  # Previously: x:0,3 30 and y:0,12 120
   xmin = 0
-  xmax = 2
-  nx = 20
+  xmax = 3
+  nx = 30
 
-  ymin = 5
-  ymax = 11
-  ny = 60
+  ymin = 0
+  ymax = 12
+  ny = 120
 
-  uniform_refine = 2
+  #uniform_refine = 1
   parallel_type = REPLICATED
   #skip_partitioning = false
 []
@@ -108,11 +107,6 @@
     variable = w_o
     value = 0.0
   [../]
-  # [./IC_oxygen]
-  #   type = FunctionIC
-  #   variable = w_o
-  #   function = ic_func_oxygen
-  # [../]
 []
 
 
@@ -120,19 +114,15 @@
 [Functions]
   [./ic_func_etaa0]
     type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5^2*(1.0-tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
+    value = 'int_thick:=0.3; 0.5^2*(1.0-tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
   [../]
   [./ic_func_etab0]
     type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5^2*(1.0+tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
+    value = 'int_thick:=0.3; 0.5^2*(1.0+tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
   [../]
   [./ic_func_etag0]
     type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(y-10.0)/int_thick))'
-  [../]
-  [./ic_func_oxygen]
-    type = ParsedFunction
-    value = 'int_thick:=0.2; -3*(0.5^2*(1.0+tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick)))'
+    value = 'int_thick:=0.3; 0.5*(1.0+tanh(pi*(y-10.0)/int_thick))'
   [../]
 []
 
@@ -587,12 +577,10 @@
     f_name = K
     args = 'rho_o_var rho_c_var'
 
-    #function = 'if(rho_o_var<0.0,0,if(rho_c_var<0.0,0, (K_a*h_a + K_b*h_b + K_g*h_g)))'
-    # ifs are hard coded in kernel
-    function = 'K_a*h_a + K_b*h_b + K_g*h_g'
+    function = 'if(rho_o_var<0.0,0,if(rho_c_var<0.0,0, (K_a*h_a + K_b*h_b + K_g*h_g)))'
 
-    constant_names        = 'K_a      K_b     K_g'
-    constant_expressions  = '-1       -1      -1'
+    constant_names        = 'K_a      K_b      K_g'
+    constant_expressions  = '-1       -1       -1'
 
     #constant_expressions  = '-0.1     -10.0   0.0'
     #OG: constant_expressions = '-0.1 -10.0'
@@ -617,7 +605,7 @@
     # Future work: how to make these parameters realistic
     type = GenericConstantMaterial
     prop_names  = 'gab    gag     gbg     mu'
-    prop_values = '4.5    4.5     4.5     1.0'
+    prop_values = '1.5    4.5     4.5     1.0'
     outputs = exodus
   [../]
 
@@ -626,8 +614,8 @@
     prop_names  = 'A_c_a    xeq_c_a
                    A_c_b    xeq_c_b
                    A_c_g    xeq_c_g'
-    prop_values = '34       0.97
-                   10       0.70
+    prop_values = '34       0.99
+                   10       0.7
                    100      1e-3'
 
     outputs = exodus
@@ -638,12 +626,11 @@
     prop_names  = 'A_o_a    xeq_o_a
                    A_o_b    xeq_o_b
                    A_o_g    xeq_o_g'
-    prop_values = '10       0
-                   10       0
+    prop_values = '1e4      0
+                   1e4      0
                    10       0.99'
     #if there is any oxygen in the fiber or char, it reacts and consumes it from inside
     #1e-4 not bad
-    #A is 1e4 1e4 10
     outputs = exodus
   [../]
 
@@ -665,7 +652,7 @@
     f_name = D_o
     args = 'etaa0 etab0 etag0'
     material_property_names = 'h_a h_b h_g'
-    function = '(h_a*1e-10 + h_b*1e-4 +h_g*1)'
+    function = '(h_a*10 + h_b*10 +h_g*10)'
     #function = '(h_a*0.1 + h_b*0.1 +h_g*10.0)'
 
     outputs = exodus
@@ -778,10 +765,10 @@
   [../]
 
   # [./Adaptivity]
-  #   initial_adaptivity = 2
-  #   max_h_level = 2
-  #   refine_fraction = 0.9
-  #   coarsen_fraction = 0.1
+  #   initial_adaptivity = 1
+  #   max_h_level = 1
+  #   refine_fraction = 0.8
+  #   coarsen_fraction = 0.2
   # [../]
 
   [./TimeStepper]
@@ -794,28 +781,6 @@
   [../]
 []
 
-# [Adaptivity]
-#   marker = errorfrac
-#   steps = 2
-#   max_h_level = 2
-#   initial_steps = 2
-#
-#   [./Indicators]
-#     [./error]
-#       type = GradientJumpIndicator
-#       variable = w_c
-#     [../]
-#   [../]
-#
-#   [./Markers]
-#     [./errorfrac]
-#       type = ErrorFractionMarker
-#       refine = 0.9
-#       coarsen = 0.1
-#       indicator = error
-#     [../]
-#   [../]
-# []
 
 #------------------------------------------------------------------------------#
 [Postprocessors]
