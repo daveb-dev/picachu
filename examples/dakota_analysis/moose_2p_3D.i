@@ -4,17 +4,16 @@
 
   xmin = 0
   xmax = 10
-  nx = 20
+  nx = 100
 
   ymin = 0
   ymax = 10
-  ny = 20
+  ny = 100
 
   zmin = 0
   zmax = 2
-  nz = 4
+  nz = 20
 
-  uniform_refine = 2
   parallel_type = REPLICATED
   #skip_partitioning = false
 []
@@ -693,48 +692,80 @@
   [../]
 []
 
-# [Adaptivity]
-#   marker = errorfrac
-#   steps = 2
-#   max_h_level = 2
-#   initial_steps = 2
-#
-#   [./Indicators]
-#     [./error]
-#       type = GradientJumpIndicator
-#       variable = w_c
-#     [../]
-#   [../]
-#
-#   [./Markers]
-#     [./errorfrac]
-#       type = ErrorFractionMarker
-#       refine = 0.9
-#       coarsen = 0.1
-#       indicator = error
-#     [../]
-#   [../]
-# []
+
+#------------------------------------------------------------------------------#
+[VectorPostprocessors]
+  [./grain_volumes]
+    type = FeatureVolumeVectorPostprocessor
+    flood_counter = grain_tracker
+    single_feature_per_element = true
+    execute_on = 'INITIAL TIMESTEP_END FINAL'
+    outputs = none
+  [../]
+  [./feature_volumes]
+    type = FeatureVolumeVectorPostprocessor
+    flood_counter = feature_counter
+    execute_on = 'INITIAL TIMESTEP_END FINAL'
+    outputs = none
+  [../]
+  [./line]
+    type = LineValueSampler
+    num_points  = 400
+    start_point = '5.0 0.0 0.0'
+    end_point   = '5.0 10.0 0.0'
+    variable    = etaa0
+    sort_by     = y
+    execute_on  = 'INITIAL TIMESTEP_END FINAL'
+    outputs     = vector
+  [../]
+[]
 
 #------------------------------------------------------------------------------#
 [Postprocessors]
-  [./x_carbon_solid]
+  [./feature_counter]
+    type = FeatureFloodCount
+    variable = etaa0
+    compute_var_to_feature_map = true
+    execute_on = 'INITIAL TIMESTEP_END FINAL'
+    outputs = none
+  [../]
+  [./volume]
+    type = VolumePostprocessor
+    execute_on = 'initial'
+    outputs = none
+  [../]
+  [./volume_solid]
+    type = FeatureVolumeFraction
+    mesh_volume = volume
+    feature_volumes = feature_volumes
+    execute_on = 'INITIAL TIMESTEP_END FINAL'
+  [../]
+  [./grain_tracker]
+    type = GrainTracker
+    variable = 'etaa0 etab0'
+    threshold = 0.1
+    compute_var_to_feature_map = true
+    execute_on = 'initial'
+    outputs = none
+  [../]
+
+  [./total_carbon_solid]
     type = ElementIntegralMaterialProperty
     mat_prop = rho_c_a
     execute_on = 'INITIAL TIMESTEP_END FINAL'
   [../]
-  [./x_carbon_gas]
+  [./total_carbon_gas]
     type = ElementIntegralMaterialProperty
     mat_prop = rho_c_b
     execute_on = 'INITIAL TIMESTEP_END FINAL'
   [../]
 
-  [./x_oxygen_solid]
+  [./total_oxygen_solid]
     type = ElementIntegralMaterialProperty
     mat_prop = rho_o_a
     execute_on = 'INITIAL TIMESTEP_END FINAL'
   [../]
-  [./x_oxygen_gas]
+  [./total_oxygen_gas]
     type = ElementIntegralMaterialProperty
     mat_prop = rho_o_b
     execute_on = 'INITIAL TIMESTEP_END FINAL'
@@ -759,9 +790,23 @@
 
 #------------------------------------------------------------------------------#
 [Outputs]
-  exodus = true
-  csv = true
-  execute_on = 'INITIAL TIMESTEP_END FINAL'
+  [./exodus]
+    type = Exodus
+    execute_on = 'INITIAL TIMESTEP_END'
+    file_base = ./results/mosdak_out
+  [../]
+
+  [./csv]
+    type = CSV
+    execute_on = 'INITIAL TIMESTEP_END'
+    file_base = ./results/mosdak_out
+  [../]
+
+   [./vector]
+     type = CSV
+     execute_on = 'INITIAL FINAL'
+     file_base = ./results/mosdak_vector_out
+   [../]
 []
 
 

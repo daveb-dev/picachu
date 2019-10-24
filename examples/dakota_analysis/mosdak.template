@@ -486,7 +486,7 @@
     type = GenericConstantMaterial
 
     prop_names = 'L'
-    prop_values = '1'
+    prop_values = '%L_dak%'
 
     outputs = exodus
     output_properties = L
