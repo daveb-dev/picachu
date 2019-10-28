@@ -32,6 +32,9 @@
   #Phase beta: char
   [./etab0]
   [../]
+
+  [./T]
+  [../]
 []
 
 #------------------------------------------------------------------------------#
@@ -98,6 +101,12 @@
     value = 0.0
   [../]
 
+  [./IC_temp]
+    type = ConstantIC
+    variable = T
+    value = 0
+  [../]
+
   # [./IC_circ_a]
   #   type = SpecifiedSmoothCircleIC
   #   radii = 3
@@ -142,6 +151,15 @@
 
 #------------------------------------------------------------------------------#
 [Kernels]
+  [./Heat_Conduction]
+    type = HeatConduction
+    variable = T
+  [../]
+  [./Heat_Time_Derivative]
+    type = HeatConductionTimeDerivative
+    variable = T
+  [../]
+
   # Chemical reaction
   [./Recomb_C]
     type = Reaction_GPM
@@ -150,7 +168,7 @@
     variable = w_c
     v = 'rho_c_var'
     w = 'rho_o_var'
-    args = 'etaa0 etab0'
+    args = 'etaa0 etab0 rho_c_var T'
   [../]
 
   #----------------------------------------------------------------------------#
@@ -327,11 +345,10 @@
   [./omega_a]
     type = DerivativeParsedMaterial
     f_name = omega_a
-    #args = 'w_c w_o'
-    args = 'w_c'
+    args = 'w_c w_o'
 
-    function = '-0.5*w_c^2/(Va^2 *A_c_a) - xeq_c_a*w_c/Va'
-                #-0.5*w_o^2/(Va^2 *A_o_a) - xeq_o_a*w_o/Va'
+    function = '-0.5*w_c^2/(Va^2 *A_c_a) - xeq_c_a*w_c/Va
+                -0.5*w_o^2/(Va^2 *A_o_a) - xeq_o_a*w_o/Va'
 
     material_property_names = 'h_a Va A_c_a A_o_a xeq_c_a xeq_o_a'
 
@@ -344,13 +361,10 @@
     type = DerivativeParsedMaterial
     f_name = omega_b
 
-    #args = 'w_c w_o'
-    args = 'w_o'
+    args = 'w_c w_o'
 
-    #function = '-0.5*w_c^2/(Va^2 *A_c_b) - xeq_c_b*w_c/Va'
-                #-0.5*w_o^2/(Va^2 *A_o_b) - xeq_o_b*w_o/Va'
-
-    function = '-0.5*w_o^2/(Va^2 *A_o_b) - xeq_o_b*w_o/Va'
+    function = '-0.5*w_c^2/(Va^2 *A_c_b) - xeq_c_b*w_c/Va
+                -0.5*w_o^2/(Va^2 *A_o_b) - xeq_o_b*w_o/Va'
 
     material_property_names = 'h_b Va A_c_b A_o_b xeq_c_b xeq_o_b'
 
@@ -501,9 +515,9 @@
   [./reaction_rates]
     type = DerivativeParsedMaterial
     f_name = K
-    args = 'rho_c_var'
+    args = 'rho_c_var T'
 
-    function = 'rho_c_var^2-1'
+    function = 'T*1e-3*(rho_c_var^2-1)'
 
     derivative_order = 3
     outputs = exodus
@@ -541,7 +555,7 @@
     type = GenericConstantMaterial
     prop_names  = 'A_o_a    xeq_o_a
                    A_o_b    xeq_o_b'
-    prop_values = '30        0
+    prop_values = '30       0
                    30        0.99'
 
     outputs = exodus
@@ -553,7 +567,7 @@
     f_name = D_c
     args = 'etaa0 etab0'
     material_property_names = 'h_a h_b'
-    function = '(h_a*1 + h_b*1)'
+    function = '(h_a*1e-10 + h_b*1)'
 
     outputs = exodus
     output_properties = D_c
@@ -565,7 +579,7 @@
     args = 'etaa0 etab0'
     material_property_names = 'h_a h_b'
 
-    function = '(h_a*1 + h_b*1)'
+    function = '(h_a*1e-10 + h_b*1)'
 
     outputs = exodus
     output_properties = D_o
@@ -628,7 +642,26 @@
     output_properties = sum_eta
   [../]
 
+
+  #----------------------------------------------------------------------------#
+  [./k]
+    type = GenericConstantMaterial
+    prop_names = 'thermal_conductivity'
+    prop_values = '0.01'
+  [../]
+  [./cp]
+    type = GenericConstantMaterial
+    prop_names = 'specific_heat'
+    prop_values = '0.01'
+  [../]
+  [./rho]
+    type = GenericConstantMaterial
+    prop_names = 'density'
+    prop_values = '1.0'
+  [../]
+
 []
+#End of Materials block
 
 #------------------------------------------------------------------------------#
 [BCs]
@@ -637,6 +670,13 @@
     boundary = 'top'
     variable = 'w_o'
     value = '0'
+  [../]
+
+  [./temperature]
+    type = DirichletBC
+    variable = T
+    boundary = 'left'
+    value = 1000
   [../]
 []
 
