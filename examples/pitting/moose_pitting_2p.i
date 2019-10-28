@@ -2,11 +2,11 @@
   type = GeneratedMesh
   dim = 2
 
-  xmin = 0
+  xmin = -10
   xmax = 10
   nx = 100
 
-  ymin = 0
+  ymin = -10
   ymax = 10
   ny = 100
 
@@ -98,45 +98,28 @@
     value = 0.0
   [../]
 
-  # [./IC_circ_a]
-  #   type = SpecifiedSmoothCircleIC
-  #   radii = 3
-  #   3D_spheres = false
-  #   invalue = 1
-  #   outvalue = 0
-  #   profile = TANH
-  #   variable = etaa0
-  #   x_positions = 5
-  #   y_positions = 5
-  #   z_positions = 0
-  #   int_width = 0.2
-  # [../]
-  #
-  # [./IC_circ_b]
-  #   type = SpecifiedSmoothCircleIC
-  #   radii = 3
-  #   3D_spheres = false
-  #   invalue = 0
-  #   outvalue = 1
-  #   profile = TANH
-  #   variable = etab0
-  #   x_positions = 5
-  #   y_positions = 5
-  #   z_positions = 0
-  #   int_width = 0.2
-  # [../]
 []
 
 
 #------------------------------------------------------------------------------#
 [Functions]
+  # [./ic_func_etaa0]
+  #   type = ParsedFunction
+  #   value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(-y+5.0)/int_thick))'
+  # [../]
+  # [./ic_func_etab0]
+  #   type = ParsedFunction
+  #   value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(y-5.0)/int_thick))'
+  # [../]
+
   [./ic_func_etaa0]
     type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(-y+5.0)/int_thick))'
+    value = 'r:=sqrt(x^2+y^2); int_thick:=0.2; 0.5*(1.0+tanh(pi*(r-2)/int_thick))*0.5*(1.0-tanh(pi*(y)/int_thick))'
   [../]
+
   [./ic_func_etab0]
     type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(y-5.0)/int_thick))'
+    value = 'r:=sqrt(x^2+y^2); int_thick:=0.2; 1-0.5*(1.0+tanh(pi*(r-2)/int_thick))*0.5*(1.0-tanh(pi*(y)/int_thick))'
   [../]
 []
 
@@ -528,7 +511,7 @@
     prop_names  = 'A_c_a    xeq_c_a
                    A_c_b    xeq_c_b'
     prop_values = '30       0.9
-                   30       0.1'
+                   30       0.01'
 
     outputs = exodus
   [../]
@@ -537,8 +520,8 @@
     type = GenericConstantMaterial
     prop_names  = 'A_o_a    xeq_o_a
                    A_o_b    xeq_o_b'
-    prop_values = '30       0.1
-                   30       0.9'
+    prop_values = '100      0.01
+                   100       0.9'
 
     outputs = exodus
   [../]
@@ -549,7 +532,7 @@
     f_name = D_c
     args = 'etaa0 etab0'
     material_property_names = 'h_a h_b'
-    function = '(h_a*1e-10 + h_b*1)'
+    function = '(h_a*1 + h_b*1)'
 
     outputs = exodus
     output_properties = D_c
@@ -561,7 +544,7 @@
     args = 'etaa0 etab0'
     material_property_names = 'h_a h_b'
 
-    function = '(h_a*1e-10 + h_b*1)'
+    function = '(h_a*1 + h_b*1)'
 
     outputs = exodus
     output_properties = D_o
@@ -665,7 +648,7 @@
   l_tol = 1.0e-3
 
   start_time = 0.0
-  end_time = 20
+  end_time = 1000
 
   [./Predictor]
     type = SimplePredictor
