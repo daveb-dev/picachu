@@ -141,6 +141,15 @@
   [../]
 []
 
+
+#------------------------------------------------------------------------------#
+  #    #  ######  #####   #    #  ######  #        ####
+  #   #   #       #    #  ##   #  #       #       #
+  ####    #####   #    #  # #  #  #####   #        ####
+  #  #    #       #####   #  # #  #       #            #
+  #   #   #       #   #   #   ##  #       #       #    #
+  #    #  ######  #    #  #    #  ######  ######   ####
+#------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
 [Kernels]
   # Chemical reaction
@@ -598,6 +607,14 @@
     output_properties = x_o
   [../]
 
+
+  #----------------------------------------------------------------------------#
+    #####     ##    #####     ##    #    #   ####
+    #    #   #  #   #    #   #  #   ##  ##  #
+    #    #  #    #  #    #  #    #  # ## #   ####
+    #####   ######  #####   ######  #    #       #
+    #       #    #  #   #   #    #  #    #  #    #
+    #       #    #  #    #  #    #  #    #   ####
   #----------------------------------------------------------------------------#
   # Reaction rate constants
   [./phase_mobility]
@@ -609,7 +626,7 @@
                 (etaa0^2*etab0^2        +etaa0^2*etag0^2        +etab0^2*etag0^2)'
 
     constant_names        = 'Lab      Lag     Lbg'
-    constant_expressions  = '1        1       1'
+    constant_expressions  = '0.1        0.1       0.1'
 
     derivative_order = 2
     outputs = exodus
@@ -623,9 +640,9 @@
     f_name = K
     args = 'rho_c_var'
 
-    function = '-1*(rho_c_var^2-1)'
+    function = '0.1*(rho_c_var-1)'
 
-    derivative_order = 2
+    derivative_order = 3
     outputs = exodus
     #output_properties = K
   [../]
@@ -654,7 +671,7 @@
                    A_c_g    xeq_c_g'
     prop_values = '34       0.97
                    34       0.70
-                   100      0'
+                   34       0.01'
 
     outputs = exodus
   [../]
@@ -664,9 +681,9 @@
     prop_names  = 'A_o_a    xeq_o_a
                    A_o_b    xeq_o_b
                    A_o_g    xeq_o_g'
-    prop_values = '10       0
-                   10       0
-                   10       0.99'
+    prop_values = '50       0.01
+                   50       0.01
+                   50       0.99'
 
     outputs = exodus
   [../]
@@ -694,6 +711,15 @@
     outputs = exodus
     output_properties = D_o
   [../]
+
+  #------------------------------------------------------------------------------#
+    ######  #    #  #####
+    #       ##   #  #    #
+    #####   # #  #  #    #
+    #       #  # #  #    #
+    #       #   ##  #    #
+    ######  #    #  #####
+  #------------------------------------------------------------------------------#
 
   [./chi_c]
     type = DerivativeParsedMaterial
@@ -751,8 +777,10 @@
     outputs = exodus
     output_properties = sum_eta
   [../]
-
 []
+#------------------------------------------------------------------------------#
+# END OF MATERIALS
+
 
 #------------------------------------------------------------------------------#
 [BCs]
@@ -793,52 +821,25 @@
   l_tol = 1.0e-3
 
   start_time = 0.0
-  end_time = 20
+  end_time = 10000
+  #dt = 0.1
+  dtmax = 1000.0
 
   [./Predictor]
     type = SimplePredictor
     scale = 1
   [../]
 
-  # [./Adaptivity]
-  #   initial_adaptivity = 2
-  #   max_h_level = 2
-  #   refine_fraction = 0.9
-  #   coarsen_fraction = 0.1
-  # [../]
 
   [./TimeStepper]
     type = IterationAdaptiveDT
-    dt = 0.1
+    dt = 0.01
     growth_factor = 1.2
     cutback_factor = 0.8
     optimal_iterations = 12
     iteration_window = 0
   [../]
 []
-
-# [Adaptivity]
-#   marker = errorfrac
-#   steps = 2
-#   max_h_level = 2
-#   initial_steps = 2
-#
-#   [./Indicators]
-#     [./error]
-#       type = GradientJumpIndicator
-#       variable = w_c
-#     [../]
-#   [../]
-#
-#   [./Markers]
-#     [./errorfrac]
-#       type = ErrorFractionMarker
-#       refine = 0.9
-#       coarsen = 0.1
-#       indicator = error
-#     [../]
-#   [../]
-# []
 
 #------------------------------------------------------------------------------#
 [VectorPostprocessors]
