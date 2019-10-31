@@ -1,31 +1,25 @@
-#------------------------------------------------------------------------------#
-# 3-phase GPM simulation
-# with oxidation
-# Based on multi_multi_v3
-#------------------------------------------------------------------------------#
 [Mesh]
   type = GeneratedMesh
   dim = 2
 
-  # Previously: x:0,3 30 and y:0,12 120
   xmin = 0
-  xmax = 2
-  nx = 20
+  xmax = 100
+  nx = 200
 
-  ymin = 5
-  ymax = 11
-  ny = 60
+  ymin = 0
+  ymax = 100
+  ny = 200
 
-  uniform_refine = 2
+  uniform_refine = 1
   parallel_type = REPLICATED
   #skip_partitioning = false
 []
 #------------------------------------------------------------------------------#
-[Problem]
-  type = FEProblem
-  coord_type = RZ
-  rz_coord_axis = Y
-[]
+# [Problem]
+#   type = FEProblem
+#   coord_type = RZ
+#   rz_coord_axis = Y
+# []
 #------------------------------------------------------------------------------#
 [Variables]
   [./w_c]
@@ -38,9 +32,6 @@
   [../]
   #Phase beta: char
   [./etab0]
-  [../]
-  #Phase gamma: gas
-  [./etag0]
   [../]
 []
 
@@ -68,7 +59,7 @@
     type = BndsCalcAux
     variable = bnds
     execute_on = timestep_end
-    v = 'etaa0 etab0 etag0'
+    v = 'etaa0 etab0'
     var_name_base = 'eta'
   [../]
 
@@ -85,24 +76,18 @@
 []
 
 
-
 #------------------------------------------------------------------------------#
 [ICs]
-  [./IC_etaa0]
-    type = FunctionIC
-    variable = etaa0
-    function = ic_func_etaa0
-  [../]
-  [./IC_etab0]
-    type = FunctionIC
-    variable = etab0
-    function = ic_func_etab0
-  [../]
-  [./IC_etag0]
-    type = FunctionIC
-    variable = etag0
-    function = ic_func_etag0
-  [../]
+  # [./IC_etaa0]
+  #   type = FunctionIC
+  #   variable = etaa0
+  #   function = ic_func_etaa0
+  # [../]
+  # [./IC_etab0]
+  #   type = FunctionIC
+  #   variable = etab0
+  #   function = ic_func_etab0
+  # [../]
   [./IC_w_c]
     type = ConstantIC
     variable = w_c
@@ -113,31 +98,59 @@
     variable = w_o
     value = 0.0
   [../]
-  # [./IC_oxygen]
-  #   type = FunctionIC
-  #   variable = w_o
-  #   function = ic_func_oxygen
-  # [../]
+
+
+  [./etaa0]
+    type = MultiSmoothSuperellipsoidIC
+    variable = etaa0
+    invalue = 1.0
+    outvalue = 0.0
+  [../]
+
+  [./etab0]
+    type = MultiSmoothSuperellipsoidIC
+    variable = etab0
+    invalue = 0.0
+    outvalue = 1.0
+  [../]
+
+[]
+
+#------------------------------------------------------------------------------#
+[GlobalParams]
+  rand_seed = 29130
+
+  bubspac = '12'
+  numbub = '30'
+  semiaxis_variation_type = uniform
+
+  semiaxis_a = '12'
+  semiaxis_a_variation = '0.2'
+
+  semiaxis_b = '1.5'
+  semiaxis_b_variation = '0.1'
+
+  int_width = 0.5
+
+  exponent = '2'
+
+  prevent_overlap = true
+  check_extremes = true
+
+  semiaxis_c_variation = '0'
+  semiaxis_c = '1'
 []
 
 
-#------------------------------------------------------------------------------#
+
 [Functions]
   [./ic_func_etaa0]
     type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5^2*(1.0-tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
+    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(-y+5.0)/int_thick))'
   [../]
   [./ic_func_etab0]
     type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5^2*(1.0+tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
-  [../]
-  [./ic_func_etag0]
-    type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(y-10.0)/int_thick))'
-  [../]
-  [./ic_func_oxygen]
-    type = ParsedFunction
-    value = 'int_thick:=0.2; -3*(0.5^2*(1.0+tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick)))'
+    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(y-5.0)/int_thick))'
   [../]
 []
 
@@ -151,7 +164,7 @@
     variable = w_c
     v = 'rho_c_var'
     w = 'rho_o_var'
-    args = 'etaa0 etab0 etag0 rho_c_var'
+    args = 'etaa0 etab0'
   [../]
 
   [./Recomb_O]
@@ -161,7 +174,7 @@
     variable = w_o
     v = 'rho_o_var'
     w = 'rho_c_var'
-    args = 'etaa0 etab0 etag0 rho_c_var'
+    args = 'etaa0 etab0'
   [../]
 
   #----------------------------------------------------------------------------#
@@ -169,17 +182,17 @@
   [./ACa0_bulk]
     type = ACGrGrMulti
     variable = etaa0
-    v =           'etab0 etag0'
-    gamma_names = 'gab   gag'
+    v =           'etab0'
+    gamma_names = 'gab'
     mob_name = L
   [../]
 
   [./ACa0_sw]
     type = ACSwitching
     variable = etaa0
-    Fj_names  = 'omega_a omega_b omega_g'
-    hj_names  = 'h_a     h_b     h_g'
-    args = 'etab0 etag0 w_c w_o'
+    Fj_names  = 'omega_a omega_b'
+    hj_names  = 'h_a     h_b'
+    args = 'etab0 w_c w_o'
     mob_name = L
   [../]
 
@@ -188,7 +201,7 @@
     variable = etaa0
     kappa_name = kappa
     mob_name = L
-    args = 'etab0 etag0'
+    args = 'etab0'
   [../]
 
   [./etaa0_dot]
@@ -201,17 +214,17 @@
   [./ACb0_bulk]
     type = ACGrGrMulti
     variable = etab0
-    v =           'etaa0 etag0'
-    gamma_names = 'gab   gbg'
+    v =           'etaa0'
+    gamma_names = 'gab'
     mob_name = L
   [../]
 
   [./ACb0_sw]
     type = ACSwitching
     variable = etab0
-    Fj_names  = 'omega_a omega_b omega_g'
-    hj_names  = 'h_a     h_b     h_g'
-    args = 'etaa0 etag0 w_c w_o'
+    Fj_names  = 'omega_a omega_b'
+    hj_names  = 'h_a     h_b'
+    args = 'etaa0 w_c w_o'
     mob_name = L
   [../]
 
@@ -220,44 +233,12 @@
     variable = etab0
     kappa_name = kappa
     mob_name = L
-    args = 'etaa0 etag0'
+    args = 'etaa0'
   [../]
 
   [./etab0_dot]
     type = TimeDerivative
     variable = etab0
-  [../]
-
-  #----------------------------------------------------------------------------#
-  # etag0 kernels
-  [./ACg0_bulk]
-    type = ACGrGrMulti
-    variable = etag0
-    v =           'etaa0 etab0'
-    gamma_names = 'gag   gbg'
-    mob_name = L
-  [../]
-
-  [./ACg0_sw]
-    type = ACSwitching
-    variable = etag0
-    Fj_names  = 'omega_a omega_b omega_g'
-    hj_names  = 'h_a     h_b     h_g'
-    args = 'etaa0 etab0 w_c w_o'
-    mob_name = L
-  [../]
-
-  [./ACg0_int]
-    type = ACInterface
-    variable = etag0
-    kappa_name = kappa
-    mob_name = L
-    args = 'etaa0 etab0'
-  [../]
-
-  [./etag0_dot]
-    type = TimeDerivative
-    variable = etag0
   [../]
 
   #----------------------------------------------------------------------------#
@@ -302,27 +283,18 @@
     type = CoupledSwitchingTimeDerivative
     variable = w_c
     v = etaa0
-    Fj_names = 'rho_c_a rho_c_b rho_c_g'
-    hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_o'
+    Fj_names = 'rho_c_a rho_c_b'
+    hj_names = 'h_a   h_b'
+    args = 'etaa0 etab0 w_o'
   [../]
 
   [./coupled_etab0dot_c]
     type = CoupledSwitchingTimeDerivative
     variable = w_c
     v = etab0
-    Fj_names = 'rho_c_a rho_c_b rho_c_g'
-    hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_o'
-  [../]
-
-  [./coupled_etag0dot_c]
-    type = CoupledSwitchingTimeDerivative
-    variable = w_c
-    v = etag0
-    Fj_names = 'rho_c_a rho_c_b rho_c_g'
-    hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_o'
+    Fj_names = 'rho_c_a rho_c_b'
+    hj_names = 'h_a   h_b'
+    args = 'etaa0 etab0 w_o'
   [../]
 
   #----------------------------------------------------------------------------#
@@ -331,69 +303,47 @@
     type = CoupledSwitchingTimeDerivative
     variable = w_o
     v = etaa0
-    Fj_names = 'rho_o_a rho_o_b rho_o_g'
-    hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_c'
+    Fj_names = 'rho_o_a rho_o_b'
+    hj_names = 'h_a   h_b'
+    args = 'etaa0 etab0 w_c'
   [../]
 
   [./coupled_etab0dot_o]
     type = CoupledSwitchingTimeDerivative
     variable = w_o
     v = etab0
-    Fj_names = 'rho_o_a rho_o_b rho_o_g'
-    hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_c'
+    Fj_names = 'rho_o_a rho_o_b'
+    hj_names = 'h_a   h_b'
+    args = 'etaa0 etab0 w_c'
   [../]
 
-  [./coupled_etag0dot_o]
-    type = CoupledSwitchingTimeDerivative
-    variable = w_o
-    v = etag0
-    Fj_names = 'rho_o_a rho_o_b rho_o_g'
-    hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_c'
-  [../]
-
-  #----------------------------------------------------------------------------#
-  # END OF KERNELS
 []
+#----------------------------------------------------------------------------#
+# END OF KERNELS
 
 
 #------------------------------------------------------------------------------#
 [Materials]
   #----------------------------------------------------------------------------#
   # Switching functions
-  # Phase alpha: fiber
   [./switch_a]
     type = SwitchingFunctionMultiPhaseMaterial
     h_name = h_a
-    all_etas = 'etaa0 etab0 etag0'
+    all_etas = 'etaa0 etab0'
     phase_etas = 'etaa0'
 
     outputs = exodus
     output_properties = h_a
   [../]
 
-  # Phase beta: char
   [./switch_b]
     type = SwitchingFunctionMultiPhaseMaterial
     h_name = h_b
-    all_etas = 'etaa0 etab0 etag0'
+    all_etas = 'etaa0 etab0'
     phase_etas = 'etab0'
 
     outputs = exodus
     output_properties = h_b
-  [../]
-
-  # Phase gamma: gas
-  [./switch_g]
-    type = SwitchingFunctionMultiPhaseMaterial
-    h_name = h_g
-    all_etas = 'etaa0 etab0 etag0'
-    phase_etas = 'etag0'
-
-    outputs = exodus
-    output_properties = h_g
   [../]
 
   #----------------------------------------------------------------------------#
@@ -429,30 +379,14 @@
     output_properties = omega_b
   [../]
 
-  [./omega_g]
-    type = DerivativeParsedMaterial
-    f_name = omega_g
-
-    args = 'w_c w_o'
-
-    function = '-0.5*w_c^2/(Va^2 *A_c_g) - xeq_c_g*w_c/Va
-                -0.5*w_o^2/(Va^2 *A_o_g) - xeq_o_g*w_o/Va'
-
-    material_property_names = 'Va A_c_g A_o_g xeq_c_g xeq_o_g'
-
-    derivative_order = 2
-    outputs = exodus
-    output_properties = omega_g
-  [../]
-
   [./omega]
     type = DerivativeParsedMaterial
     f_name = omega
-    args = 'etaa0 etab0 etag0'
+    args = 'etaa0 etab0'
 
-    function = 'h_a*omega_a + h_b*omega_b + h_g*omega_g'
+    function = 'h_a*omega_a + h_b*omega_b'
 
-    material_property_names = 'h_a h_b h_g omega_a omega_b omega_g'
+    material_property_names = 'h_a h_b omega_a omega_b'
 
     outputs = exodus
     output_properties = omega
@@ -488,28 +422,14 @@
     output_properties = rho_c_b
   [../]
 
-  [./rho_c_g]
-    type = DerivativeParsedMaterial
-    f_name = rho_c_g
-    args = 'w_c'
-
-    function = 'w_c/(A_c_g*Va^2) + xeq_c_g/Va'
-
-    material_property_names = 'Va A_c_g xeq_c_g'
-
-    derivative_order = 2
-    outputs = exodus
-    output_properties = rho_c_g
-  [../]
-
   [./rho_c]
     type = DerivativeParsedMaterial
     f_name = rho_c
-    args = 'w_c etaa0 etab0 etag0'
+    args = 'w_c etaa0 etab0'
 
-    function = 'h_a*rho_c_a + h_b*rho_c_b + h_g*rho_c_g'
+    function = 'h_a*rho_c_a + h_b*rho_c_b'
 
-    material_property_names = 'h_a h_b h_g rho_c_a rho_c_b rho_c_g'
+    material_property_names = 'h_a h_b rho_c_a rho_c_b'
 
     outputs = exodus
     output_properties = rho_c
@@ -518,7 +438,7 @@
   [./x_c]
     type = DerivativeParsedMaterial
     f_name = x_c
-    args = 'w_c etaa0 etab0 etag0'
+    args = 'w_c etaa0 etab0'
 
     function = 'Va*rho_c'
 
@@ -558,28 +478,14 @@
     output_properties = rho_o_b
   [../]
 
-  [./rho_o_g]
-    type = DerivativeParsedMaterial
-    f_name = rho_o_g
-    args = 'w_o'
-
-    function = 'w_o/(A_o_g*Va^2) + xeq_o_g/Va'
-
-    material_property_names = 'Va A_o_g xeq_o_g'
-
-    derivative_order = 2
-    outputs = exodus
-    output_properties = rho_o_g
-  [../]
-
   [./rho_o]
     type = DerivativeParsedMaterial
     f_name = rho_o
-    args = 'w_o etaa0 etab0 etag0'
+    args = 'w_o etaa0 etab0'
 
-    function = 'h_a*rho_o_a + h_b*rho_o_b + h_g*rho_o_g'
+    function = 'h_a*rho_o_a + h_b*rho_o_b'
 
-    material_property_names = 'h_a h_b h_g rho_o_a rho_o_b rho_o_g'
+    material_property_names = 'h_a h_b rho_o_a rho_o_b'
 
     outputs = exodus
     output_properties = rho_o
@@ -588,7 +494,7 @@
   [./x_o]
     type = DerivativeParsedMaterial
     f_name = x_o
-    args = 'w_o etaa0 etab0 etag0'
+    args = 'w_o etaa0 etab0'
 
     function = 'Va*rho_o'
 
@@ -601,17 +507,11 @@
   #----------------------------------------------------------------------------#
   # Reaction rate constants
   [./phase_mobility]
-    type = DerivativeParsedMaterial
-    f_name = L
-    args = 'etaa0 etab0 etag0'
+    type = GenericConstantMaterial
 
-     function = '(Lab*etaa0^2*etab0^2    +Lag*etaa0^2*etag0^2    +Lbg*etab0^2*etag0^2) /
-                (etaa0^2*etab0^2        +etaa0^2*etag0^2        +etab0^2*etag0^2)'
+    prop_names = 'L'
+    prop_values = '1'
 
-    constant_names        = 'Lab      Lag     Lbg'
-    constant_expressions  = '1        1       1'
-
-    derivative_order = 2
     outputs = exodus
     output_properties = L
   [../]
@@ -619,42 +519,38 @@
   #----------------------------------------------------------------------------#
   # Reaction rate constants
   [./reaction_rates]
-    type = DerivativeParsedMaterial
-    f_name = K
-    args = 'rho_c_var'
+    type = GenericConstantMaterial
 
-    function = '-1*(rho_c_var^2-1)'
+    prop_names = 'K'
+    prop_values = '-0.1'
 
-    derivative_order = 2
     outputs = exodus
-    #output_properties = K
+    output_properties = K
   [../]
 
   #----------------------------------------------------------------------------#
   # Constant parameters
   [./constants]
     type = GenericConstantMaterial
-    prop_names =  'kappa  Va'     #L_a  L_b  L_g
-    prop_values = '0.01   1.0 '   #0.1  0.1  0.1
+    prop_names =  'kappa  Va'
+    prop_values = '0.01   1.0'
     outputs = exodus
   [../]
 
   [./gammas]
     # Future work: how to make these parameters realistic
     type = GenericConstantMaterial
-    prop_names  = 'gab    gag     gbg     mu'
-    prop_values = '4.5    4.5     4.5     1.0'
+    prop_names  = 'gab     mu'
+    prop_values = '1.0     1.0'
     outputs = exodus
   [../]
 
   [./params_carbon]
     type = GenericConstantMaterial
     prop_names  = 'A_c_a    xeq_c_a
-                   A_c_b    xeq_c_b
-                   A_c_g    xeq_c_g'
-    prop_values = '34       0.97
-                   34       0.70
-                   100      0'
+                   A_c_b    xeq_c_b'
+    prop_values = '35       0.98
+                   35       0.02'
 
     outputs = exodus
   [../]
@@ -662,11 +558,9 @@
   [./params_oxygen]
     type = GenericConstantMaterial
     prop_names  = 'A_o_a    xeq_o_a
-                   A_o_b    xeq_o_b
-                   A_o_g    xeq_o_g'
-    prop_values = '10       0
-                   10       0
-                   10       0.99'
+                   A_o_b    xeq_o_b'
+    prop_values = '35       0.02
+                   35       0.98'
 
     outputs = exodus
   [../]
@@ -675,9 +569,9 @@
   [./diff_c]
     type = DerivativeParsedMaterial
     f_name = D_c
-    args = 'etaa0 etab0 etag0'
-    material_property_names = 'h_a h_b h_g'
-    function = '(h_a*1e-10 + h_b*1e-10 +h_g*1)'
+    args = 'etaa0 etab0'
+    material_property_names = 'h_a h_b'
+    function = '(h_a*1 + h_b*1)'
 
     outputs = exodus
     output_properties = D_c
@@ -686,10 +580,10 @@
   [./diff_o]
     type = DerivativeParsedMaterial
     f_name = D_o
-    args = 'etaa0 etab0 etag0'
-    material_property_names = 'h_a h_b h_g'
+    args = 'etaa0 etab0'
+    material_property_names = 'h_a h_b'
 
-    function = '(h_a*1e-10 + h_b*1e-10 +h_g*1)'
+    function = '(h_a*1 + h_b*1)'
 
     outputs = exodus
     output_properties = D_o
@@ -699,9 +593,9 @@
     type = DerivativeParsedMaterial
     f_name = chi_c
 
-    function = '(h_a/A_c_a + h_b/A_c_b + h_g/A_c_g) / Va^2'
+    function = '(h_a/A_c_a + h_b/A_c_b) / Va^2'
 
-    material_property_names = 'Va h_a A_c_a h_b A_c_b h_g A_c_g'
+    material_property_names = 'Va h_a A_c_a h_b A_c_b'
 
     derivative_order = 2
     outputs = exodus
@@ -712,9 +606,9 @@
     type = DerivativeParsedMaterial
     f_name = chi_o
 
-    function = '(h_a/A_o_a + h_b/A_o_b + h_g/A_o_g) / Va^2'
+    function = '(h_a/A_o_a + h_b/A_o_b) / Va^2'
 
-    material_property_names = 'Va h_a A_o_a h_b A_o_b h_g A_o_g'
+    material_property_names = 'Va h_a A_o_a h_b A_o_b'
 
     derivative_order = 2
     outputs = exodus
@@ -746,8 +640,8 @@
   [./sum_eta]
     type = DerivativeParsedMaterial
     f_name = sum_eta
-    args = 'etaa0 etab0 etag0'
-    function = 'etaa0 + etab0 + etag0'
+    args = 'etaa0 etab0'
+    function = 'etaa0 + etab0'
     outputs = exodus
     output_properties = sum_eta
   [../]
@@ -793,71 +687,39 @@
   l_tol = 1.0e-3
 
   start_time = 0.0
-  end_time = 20
+  end_time = 1000
+  dt = 0.1
 
   [./Predictor]
     type = SimplePredictor
     scale = 1
   [../]
 
-  # [./Adaptivity]
-  #   initial_adaptivity = 2
-  #   max_h_level = 2
-  #   refine_fraction = 0.9
-  #   coarsen_fraction = 0.1
-  # [../]
 
-  [./TimeStepper]
-    type = IterationAdaptiveDT
-    dt = 0.1
-    growth_factor = 1.2
-    cutback_factor = 0.8
-    optimal_iterations = 12
-    iteration_window = 0
-  [../]
+  # [./TimeStepper]
+  #   type = IterationAdaptiveDT
+  #   dt = 0.01
+  #   growth_factor = 1.2
+  #   cutback_factor = 0.8
+  #   optimal_iterations = 12
+  #   iteration_window = 0
+  # [../]
 []
 
-# [Adaptivity]
-#   marker = errorfrac
-#   steps = 2
-#   max_h_level = 2
-#   initial_steps = 2
-#
-#   [./Indicators]
-#     [./error]
-#       type = GradientJumpIndicator
-#       variable = w_c
-#     [../]
-#   [../]
-#
-#   [./Markers]
-#     [./errorfrac]
-#       type = ErrorFractionMarker
-#       refine = 0.9
-#       coarsen = 0.1
-#       indicator = error
-#     [../]
-#   [../]
-# []
+
 
 #------------------------------------------------------------------------------#
 [VectorPostprocessors]
-  # [./grain_volumes]
-  #   type = FeatureVolumeVectorPostprocessor
-  #   flood_counter = grain_tracker
-  #   single_feature_per_element = true
-  #   execute_on = 'INITIAL TIMESTEP_END FINAL'
-  #   outputs = none
-  # [../]
-  [./vol_fiber]
+  [./grain_volumes]
     type = FeatureVolumeVectorPostprocessor
-    flood_counter = fiber_counter
+    flood_counter = grain_tracker
+    single_feature_per_element = true
     execute_on = 'INITIAL TIMESTEP_END FINAL'
     outputs = none
   [../]
-  [./vol_matrix]
+  [./feature_volumes]
     type = FeatureVolumeVectorPostprocessor
-    flood_counter = matrix_counter
+    flood_counter = feature_counter
     execute_on = 'INITIAL TIMESTEP_END FINAL'
     outputs = none
   [../]
@@ -875,80 +737,55 @@
 
 #------------------------------------------------------------------------------#
 [Postprocessors]
-  [./volume]
-    type = VolumePostprocessor
-    execute_on = 'initial'
-    outputs = none
-  [../]
-
-  [./fiber_counter]
+  [./feature_counter]
     type = FeatureFloodCount
     variable = etaa0
     compute_var_to_feature_map = true
     execute_on = 'INITIAL TIMESTEP_END FINAL'
     outputs = none
   [../]
-  [./matrix_counter]
-    type = FeatureFloodCount
-    variable = etab0
-    compute_var_to_feature_map = true
+  [./volume]
+    type = VolumePostprocessor
+    execute_on = 'initial'
+    outputs = none
+  [../]
+  [./volume_solid]
+    type = FeatureVolumeFraction
+    mesh_volume = volume
+    feature_volumes = feature_volumes
     execute_on = 'INITIAL TIMESTEP_END FINAL'
+  [../]
+  [./grain_tracker]
+    type = GrainTracker
+    variable = 'etaa0 etab0'
+    threshold = 0.1
+    compute_var_to_feature_map = true
+    execute_on = 'initial'
     outputs = none
   [../]
 
-  [./volume_fiber]
-    type = FeatureVolumeFraction
-    mesh_volume = volume
-    feature_volumes = vol_fiber
-    execute_on = 'INITIAL TIMESTEP_END FINAL'
-  [../]
-  [./volume_matrix]
-    type = FeatureVolumeFraction
-    mesh_volume = volume
-    feature_volumes = vol_matrix
-    execute_on = 'INITIAL TIMESTEP_END FINAL'
-  [../]
-
-  # [./grain_tracker]
-  #   type = GrainTracker
-  #   variable = 'etaa0 etab0'
-  #   threshold = 0.1
-  #   compute_var_to_feature_map = true
-  #   execute_on = 'initial'
-  #   outputs = none
-  # [../]
-
-  [./total_carbon_fiber]
+  [./total_carbon_solid]
     type = ElementIntegralMaterialProperty
     mat_prop = rho_c_a
     execute_on = 'INITIAL TIMESTEP_END FINAL'
   [../]
-  [./total_carbon_matrix]
+  [./total_carbon_gas]
     type = ElementIntegralMaterialProperty
     mat_prop = rho_c_b
     execute_on = 'INITIAL TIMESTEP_END FINAL'
   [../]
-  [./total_carbon_gas]
-    type = ElementIntegralMaterialProperty
-    mat_prop = rho_c_g
-    execute_on = 'INITIAL TIMESTEP_END FINAL'
-  [../]
 
-  [./total_oxygen_fiber]
+  [./total_oxygen_solid]
     type = ElementIntegralMaterialProperty
     mat_prop = rho_o_a
     execute_on = 'INITIAL TIMESTEP_END FINAL'
   [../]
-  [./total_oxygen_matrix]
+  [./total_oxygen_gas]
     type = ElementIntegralMaterialProperty
     mat_prop = rho_o_b
     execute_on = 'INITIAL TIMESTEP_END FINAL'
   [../]
-  [./total_oxygen_gas]
-    type = ElementIntegralMaterialProperty
-    mat_prop = rho_o_g
-    execute_on = 'INITIAL TIMESTEP_END FINAL'
-  [../]
+
 
   # Stats
   [./dt]
@@ -973,19 +810,19 @@
   [./exodus]
     type = Exodus
     execute_on = 'INITIAL TIMESTEP_END'
-    file_base = ./results_3p/moose_out
+    file_base = ./results/moose_out
   [../]
 
   [./csv]
     type = CSV
     execute_on = 'INITIAL TIMESTEP_END'
-    file_base = ./results_3p/moose_out
+    file_base = ./results/moose_out
   [../]
 
    # [./vector]
    #   type = CSV
    #   execute_on = 'INITIAL FINAL'
-   #   file_base = ./results/moose_vector_out
+   #   file_base = ./results/mosdak_vector_out
    # [../]
 []
 
