@@ -45,6 +45,16 @@
     family = LAGRANGE
   [../]
 
+  [./T_aux]
+    family = MONOMIAL
+    order = CONSTANT
+  [../]
+
+  [./K_c_recomb_mag]
+  [../]
+  [./K_o_recomb_mag]
+  [../]
+
   # Auxiliary variables for Reaction_GPM kernel
   [./rho_c_var]
     family = MONOMIAL
@@ -63,6 +73,12 @@
     execute_on = timestep_end
     v = 'etaa0 etab0'
     var_name_base = 'eta'
+  [../]
+
+  [./T_aux_kernel]
+    type = MaterialRealAux
+    property = 'T_material'
+    variable = T_aux
   [../]
 
   [./rho_c_aux]
@@ -168,7 +184,20 @@
     variable = w_c
     v = 'rho_c_var'
     w = 'rho_o_var'
-    args = 'etaa0 etab0 rho_c_var T'
+    args = 'rho_c_var T'
+    save_in = K_c_recomb_mag
+  [../]
+
+  # Chemical reaction
+  [./Recomb_O]
+    type = Reaction_GPM
+    mob_name = K
+    atomic_vol = Va
+    variable = w_o
+    v = 'rho_c_var'
+    w = 'rho_o_var'
+    args = 'rho_c_var T'
+    save_in = K_o_recomb_mag
   [../]
 
   #----------------------------------------------------------------------------#
@@ -504,7 +533,7 @@
     type = GenericConstantMaterial
 
     prop_names = 'L'
-    prop_values = '1'
+    prop_values = '0.01'
 
     outputs = exodus
     output_properties = L
@@ -517,9 +546,9 @@
     f_name = K
     args = 'rho_c_var T'
 
-    function = 'T*1e-3*(rho_c_var^2-1)'
+    function = '-T*1e-5'
 
-    derivative_order = 3
+    derivative_order = 2
     outputs = exodus
     #output_properties = K
   [../]
@@ -647,7 +676,7 @@
   [./k]
     type = GenericConstantMaterial
     prop_names = 'thermal_conductivity'
-    prop_values = '0.01'
+    prop_values = '0.002'
   [../]
   [./cp]
     type = GenericConstantMaterial
@@ -658,6 +687,19 @@
     type = GenericConstantMaterial
     prop_names = 'density'
     prop_values = '1.0'
+  [../]
+
+  [./T_material] # For coloring in paraview
+    type = ParsedMaterial
+    f_name = T_material
+
+    function = 'T'
+
+    args = T
+
+    output_properties = T
+    outputs = exodus
+
   [../]
 
 []
@@ -709,7 +751,8 @@
   l_tol = 1.0e-3
 
   start_time = 0.0
-  end_time = 20
+  end_time = 1000
+  dtmax = 10
 
   [./Predictor]
     type = SimplePredictor

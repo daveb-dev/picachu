@@ -7,16 +7,15 @@
   type = GeneratedMesh
   dim = 2
 
-  # Previously: x:0,3 30 and y:0,12 120
   xmin = 0
-  xmax = 2
-  nx = 20
+  xmax = 4
+  nx = 80
 
-  ymin = 5
-  ymax = 11
-  ny = 60
+  ymin = 0
+  ymax = 12
+  ny = 240
 
-  uniform_refine = 2
+
   parallel_type = REPLICATED
   #skip_partitioning = false
 []
@@ -26,21 +25,29 @@
   coord_type = RZ
   rz_coord_axis = Y
 []
-#------------------------------------------------------------------------------#
-[Variables]
-  [./w_c]
-  [../]
-  [./w_o]
-  [../]
 
-  #Phase alpha: carbon fiber
-  [./etaa0]
+[GlobalParams]
+  # Interface thickness from Grand Potential material
+  width = 0.2
+[../]
+
+#------------------------------------------------------------------------------#
+[Functions]
+  [./ic_func_etaa0]
+    type = ParsedFunction
+    value = 'int_thick:=0.2; 0.5^2*(1.0-tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
   [../]
-  #Phase beta: char
-  [./etab0]
+  [./ic_func_etab0]
+    type = ParsedFunction
+    value = 'int_thick:=0.2; 0.5^2*(1.0+tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
   [../]
-  #Phase gamma: gas
-  [./etag0]
+  [./ic_func_etag0]
+    type = ParsedFunction
+    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(y-10.0)/int_thick))'
+  [../]
+  [./ic_func_oxygen]
+    type = ParsedFunction
+    value = 'int_thick:=0.2; -3*(0.5^2*(1.0+tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick)))'
   [../]
 []
 
@@ -58,6 +65,10 @@
     order = CONSTANT
   [../]
   [./rho_o_var]
+    family = MONOMIAL
+    order = CONSTANT
+  [../]
+  [./rho_m_var]
     family = MONOMIAL
     order = CONSTANT
   [../]
@@ -82,9 +93,32 @@
     property = 'rho_o'
     variable = rho_o_var
   [../]
+  [./rho_m_aux]
+    type = MaterialRealAux
+    property = 'rho_m'
+    variable = rho_m_var
+  [../]
 []
 
+#------------------------------------------------------------------------------#
+[Variables]
+  [./w_c]
+  [../]
+  [./w_m]
+  [../]
+  [./w_o]
+  [../]
 
+  #Phase alpha: carbon fiber
+  [./etaa0]
+  [../]
+  #Phase beta: char
+  [./etab0]
+  [../]
+  #Phase gamma: gas
+  [./etag0]
+  [../]
+[]
 
 #------------------------------------------------------------------------------#
 [ICs]
@@ -113,34 +147,17 @@
     variable = w_o
     value = 0.0
   [../]
+  [./IC_w_m]
+    type = ConstantIC
+    variable = w_m
+    value = 0.0
+  [../]
   # [./IC_oxygen]
   #   type = FunctionIC
   #   variable = w_o
   #   function = ic_func_oxygen
   # [../]
 []
-
-
-#------------------------------------------------------------------------------#
-[Functions]
-  [./ic_func_etaa0]
-    type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5^2*(1.0-tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
-  [../]
-  [./ic_func_etab0]
-    type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5^2*(1.0+tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick))'
-  [../]
-  [./ic_func_etag0]
-    type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(y-10.0)/int_thick))'
-  [../]
-  [./ic_func_oxygen]
-    type = ParsedFunction
-    value = 'int_thick:=0.2; -3*(0.5^2*(1.0+tanh(pi*(x-1.0)/int_thick))*(1.0+tanh(pi*(-y+10.0)/int_thick)))'
-  [../]
-[]
-
 
 #------------------------------------------------------------------------------#
   #    #  ######  #####   #    #  ######  #        ####
@@ -153,15 +170,15 @@
 #------------------------------------------------------------------------------#
 [Kernels]
   # Chemical reaction
-  [./Recomb_C]
-    type = Reaction_GPM
-    mob_name = K
-    atomic_vol = Va
-    variable = w_c
-    v = 'rho_c_var'
-    w = 'rho_o_var'
-    args = 'etaa0 etab0 etag0 rho_c_var'
-  [../]
+  # [./Recomb_C]
+  #   type = Reaction_GPM
+  #   mob_name = K
+  #   atomic_vol = Va
+  #   variable = w_c
+  #   v = 'rho_c_var'
+  #   w = 'rho_o_var'
+  #   args = 'etaa0 etab0 etag0 rho_m_var'
+  # [../]
 
   [./Recomb_O]
     type = Reaction_GPM
@@ -170,7 +187,17 @@
     variable = w_o
     v = 'rho_o_var'
     w = 'rho_c_var'
-    args = 'etaa0 etab0 etag0 rho_c_var'
+    #args = 'rho_m_var'
+  [../]
+
+  [./Recomb_M]
+    type = Reaction_GPM
+    mob_name = K
+    atomic_vol = Va
+    variable = w_m
+    v = 'rho_o_var'
+    w = 'rho_m_var'
+    #args = 'rho_m_var'
   [../]
 
   #----------------------------------------------------------------------------#
@@ -188,7 +215,7 @@
     variable = etaa0
     Fj_names  = 'omega_a omega_b omega_g'
     hj_names  = 'h_a     h_b     h_g'
-    args = 'etab0 etag0 w_c w_o'
+    args = 'etab0 etag0 w_c w_o w_m'
     mob_name = L
   [../]
 
@@ -220,7 +247,7 @@
     variable = etab0
     Fj_names  = 'omega_a omega_b omega_g'
     hj_names  = 'h_a     h_b     h_g'
-    args = 'etaa0 etag0 w_c w_o'
+    args = 'etaa0 etag0 w_c w_o w_m'
     mob_name = L
   [../]
 
@@ -252,7 +279,7 @@
     variable = etag0
     Fj_names  = 'omega_a omega_b omega_g'
     hj_names  = 'h_a     h_b     h_g'
-    args = 'etaa0 etab0 w_c w_o'
+    args = 'etaa0 etab0 w_c w_o w_m'
     mob_name = L
   [../]
 
@@ -288,6 +315,23 @@
   [../]
 
   #----------------------------------------------------------------------------#
+  # Carbon in the Matrix
+  [./w_m_dot]
+    type = SusceptibilityTimeDerivative
+    variable = w_m
+    f_name = chi_m
+    args = '' # in this case chi (the susceptibility) is simply a constant
+  [../]
+
+  [./diffusion_m]
+    type = MatDiffusion
+    variable = w_m
+    diffusivity = Dchi_m
+    args = ''
+  [../]
+
+
+  #----------------------------------------------------------------------------#
   # Oxygen
   [./w_o_dot]
     type = SusceptibilityTimeDerivative
@@ -313,7 +357,7 @@
     v = etaa0
     Fj_names = 'rho_c_a rho_c_b rho_c_g'
     hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_o'
+    args = 'etaa0 etab0 etag0 w_o w_m'
   [../]
 
   [./coupled_etab0dot_c]
@@ -322,7 +366,7 @@
     v = etab0
     Fj_names = 'rho_c_a rho_c_b rho_c_g'
     hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_o'
+    args = 'etaa0 etab0 etag0 w_o w_m'
   [../]
 
   [./coupled_etag0dot_c]
@@ -331,7 +375,36 @@
     v = etag0
     Fj_names = 'rho_c_a rho_c_b rho_c_g'
     hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_o'
+    args = 'etaa0 etab0 etag0 w_o w_m'
+  [../]
+
+  #----------------------------------------------------------------------------#
+  # Carbon in the Matrix
+  [./coupled_etaa0dot_m]
+    type = CoupledSwitchingTimeDerivative
+    variable = w_m
+    v = etaa0
+    Fj_names = 'rho_m_a rho_m_b rho_m_g'
+    hj_names = 'h_a   h_b   h_g'
+    args = 'etaa0 etab0 etag0 w_o w_c'
+  [../]
+
+  [./coupled_etab0dot_m]
+    type = CoupledSwitchingTimeDerivative
+    variable = w_m
+    v = etab0
+    Fj_names = 'rho_m_a rho_m_b rho_m_g'
+    hj_names = 'h_a   h_b   h_g'
+    args = 'etaa0 etab0 etag0 w_o w_c'
+  [../]
+
+  [./coupled_etag0dot_m]
+    type = CoupledSwitchingTimeDerivative
+    variable = w_m
+    v = etag0
+    Fj_names = 'rho_m_a rho_m_b rho_m_g'
+    hj_names = 'h_a   h_b   h_g'
+    args = 'etaa0 etab0 etag0 w_o w_c'
   [../]
 
   #----------------------------------------------------------------------------#
@@ -342,7 +415,7 @@
     v = etaa0
     Fj_names = 'rho_o_a rho_o_b rho_o_g'
     hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_c'
+    args = 'etaa0 etab0 etag0 w_c w_m'
   [../]
 
   [./coupled_etab0dot_o]
@@ -351,7 +424,7 @@
     v = etab0
     Fj_names = 'rho_o_a rho_o_b rho_o_g'
     hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_c'
+    args = 'etaa0 etab0 etag0 w_c w_m'
   [../]
 
   [./coupled_etag0dot_o]
@@ -360,7 +433,7 @@
     v = etag0
     Fj_names = 'rho_o_a rho_o_b rho_o_g'
     hj_names = 'h_a   h_b   h_g'
-    args = 'etaa0 etab0 etag0 w_c'
+    args = 'etaa0 etab0 etag0 w_c w_m'
   [../]
 
   #----------------------------------------------------------------------------#
@@ -410,12 +483,13 @@
   [./omega_a]
     type = DerivativeParsedMaterial
     f_name = omega_a
-    args = 'w_c w_o'
+    args = 'w_c w_o w_m'
 
     function = '-0.5*w_c^2/(Va^2 *A_c_a) - xeq_c_a*w_c/Va
-                -0.5*w_o^2/(Va^2 *A_o_a) - xeq_o_a*w_o/Va'
+                -0.5*w_o^2/(Va^2 *A_o_a) - xeq_o_a*w_o/Va
+                -0.5*w_m^2/(Va^2 *A_m_a) - xeq_m_a*w_m/Va'
 
-    material_property_names = 'Va A_c_a A_o_a xeq_c_a xeq_o_a'
+    material_property_names = 'Va A_c_a A_o_a xeq_c_a xeq_o_a A_m_a xeq_m_a'
 
     derivative_order = 2
     outputs = exodus
@@ -426,12 +500,13 @@
     type = DerivativeParsedMaterial
     f_name = omega_b
 
-    args = 'w_c w_o'
+    args = 'w_c w_o w_m'
 
     function = '-0.5*w_c^2/(Va^2 *A_c_b) - xeq_c_b*w_c/Va
-                -0.5*w_o^2/(Va^2 *A_o_b) - xeq_o_b*w_o/Va'
+                -0.5*w_o^2/(Va^2 *A_o_b) - xeq_o_b*w_o/Va
+                -0.5*w_m^2/(Va^2 *A_m_b) - xeq_m_b*w_m/Va'
 
-    material_property_names = 'Va A_c_b A_o_b xeq_c_b xeq_o_b'
+    material_property_names = 'Va A_c_b A_o_b xeq_c_b xeq_o_b A_m_b xeq_m_b'
 
     derivative_order = 2
     outputs = exodus
@@ -442,12 +517,13 @@
     type = DerivativeParsedMaterial
     f_name = omega_g
 
-    args = 'w_c w_o'
+    args = 'w_c w_o w_m'
 
     function = '-0.5*w_c^2/(Va^2 *A_c_g) - xeq_c_g*w_c/Va
-                -0.5*w_o^2/(Va^2 *A_o_g) - xeq_o_g*w_o/Va'
+                -0.5*w_o^2/(Va^2 *A_o_g) - xeq_o_g*w_o/Va
+                -0.5*w_m^2/(Va^2 *A_m_g) - xeq_m_g*w_m/Va'
 
-    material_property_names = 'Va A_c_g A_o_g xeq_c_g xeq_o_g'
+    material_property_names = 'Va A_c_g A_o_g xeq_c_g xeq_o_g A_m_g xeq_m_g'
 
     derivative_order = 2
     outputs = exodus
@@ -535,6 +611,76 @@
 
     outputs = exodus
     output_properties = x_c
+  [../]
+
+  #----------------------------------------------------------------------------#
+  # CARBON IN THE MATRIX
+  [./rho_m_a]
+    type = DerivativeParsedMaterial
+    f_name = rho_m_a
+    args = 'w_m'
+
+    function = 'w_m/(A_m_a*Va^2) + xeq_m_a/Va'
+
+    material_property_names = 'Va A_m_a xeq_m_a'
+
+    derivative_order = 2
+    outputs = exodus
+    output_properties = rho_m_a
+  [../]
+
+  [./rho_m_b]
+    type = DerivativeParsedMaterial
+    f_name = rho_m_b
+    args = 'w_m'
+
+    function = 'w_m/(A_m_b*Va^2) + xeq_m_b/Va'
+
+    material_property_names = 'Va A_m_b xeq_m_b'
+
+    derivative_order = 2
+    outputs = exodus
+    output_properties = rho_m_b
+  [../]
+
+  [./rho_m_g]
+    type = DerivativeParsedMaterial
+    f_name = rho_m_g
+    args = 'w_m'
+
+    function = 'w_m/(A_m_g*Va^2) + xeq_m_g/Va'
+
+    material_property_names = 'Va A_m_g xeq_m_g'
+
+    derivative_order = 2
+    outputs = exodus
+    output_properties = rho_m_g
+  [../]
+
+  [./rho_m]
+    type = DerivativeParsedMaterial
+    f_name = rho_m
+    args = 'w_m etaa0 etab0 etag0'
+
+    function = 'h_a*rho_m_a + h_b*rho_m_b + h_g*rho_m_g'
+
+    material_property_names = 'h_a h_b h_g rho_m_a rho_m_b rho_m_g'
+
+    outputs = exodus
+    output_properties = rho_m
+  [../]
+
+  [./x_m]
+    type = DerivativeParsedMaterial
+    f_name = x_m
+    args = 'w_m etaa0 etab0 etag0'
+
+    function = 'Va*rho_m'
+
+    material_property_names = 'Va rho_m'
+
+    outputs = exodus
+    output_properties = x_m
   [../]
 
   #----------------------------------------------------------------------------#
@@ -626,25 +772,41 @@
                 (etaa0^2*etab0^2        +etaa0^2*etag0^2        +etab0^2*etag0^2)'
 
     constant_names        = 'Lab      Lag     Lbg'
-    constant_expressions  = '0.1        0.1       0.1'
+    constant_expressions  = '0.1 0.1 0.1'
 
-    derivative_order = 2
     outputs = exodus
     output_properties = L
   [../]
 
   #----------------------------------------------------------------------------#
+  # # Reaction rate constants
+  # [./reaction_rates]
+  #   type = DerivativeParsedMaterial
+  #   f_name = K
+  #   args = 'rho_c_var rho_m_var etaa0 etab0 etag0'
+  #
+  #   function = '0.1*(rho_m_var-1)'
+  #
+  #   constant_names = 'Ka Kb'
+  #   constant_expressions = '0.1 1.0'
+  #
+  #   material_property_names = 'h_a h_b'
+  #
+  #   derivative_order = 2
+  #   outputs = exodus
+  #   #output_properties = K
+  # [../]
+
+  #----------------------------------------------------------------------------#
   # Reaction rate constants
   [./reaction_rates]
-    type = DerivativeParsedMaterial
-    f_name = K
-    args = 'rho_c_var'
+    type = GenericConstantMaterial
 
-    function = '0.1*(rho_c_var-1)'
+    prop_names = 'K'
+    prop_values = '-0.1'
 
-    derivative_order = 3
     outputs = exodus
-    #output_properties = K
+    output_properties = K
   [../]
 
   #----------------------------------------------------------------------------#
@@ -652,7 +814,7 @@
   [./constants]
     type = GenericConstantMaterial
     prop_names =  'kappa  Va'     #L_a  L_b  L_g
-    prop_values = '0.01   1.0 '   #0.1  0.1  0.1
+    prop_values = '0.1   1.0 '   #0.1  0.1  0.1
     outputs = exodus
   [../]
 
@@ -670,8 +832,20 @@
                    A_c_b    xeq_c_b
                    A_c_g    xeq_c_g'
     prop_values = '34       0.97
-                   34       0.70
-                   34       0.01'
+                   10       0.70
+                   100      1e-3'
+
+    outputs = exodus
+  [../]
+
+  [./params_matrix]
+    type = GenericConstantMaterial
+    prop_names  = 'A_m_a    xeq_m_a
+                   A_m_b    xeq_m_b
+                   A_m_g    xeq_m_g'
+    prop_values = '34       0.97
+                   10       0.70
+                   100      1e-3'
 
     outputs = exodus
   [../]
@@ -681,9 +855,9 @@
     prop_names  = 'A_o_a    xeq_o_a
                    A_o_b    xeq_o_b
                    A_o_g    xeq_o_g'
-    prop_values = '50       0.01
-                   50       0.01
-                   50       0.99'
+    prop_values = '10       1e-3
+                   10       1e-3
+                   10       0.99'
 
     outputs = exodus
   [../]
@@ -694,10 +868,21 @@
     f_name = D_c
     args = 'etaa0 etab0 etag0'
     material_property_names = 'h_a h_b h_g'
-    function = '(h_a*1e-10 + h_b*1e-10 +h_g*1)'
+    function = '(h_a*1e-10+ h_b*1e-10 +h_g*1)'
 
     outputs = exodus
     output_properties = D_c
+  [../]
+
+  [./diff_m]
+    type = DerivativeParsedMaterial
+    f_name = D_m
+    args = 'etaa0 etab0 etag0'
+    material_property_names = 'h_a h_b h_g'
+    function = '(h_a*1e-10+ h_b*1e-10 +h_g*1)'
+
+    outputs = exodus
+    output_properties = D_m
   [../]
 
   [./diff_o]
@@ -734,6 +919,42 @@
     output_properties = chi_c
   [../]
 
+  [./mob_c]
+    type = DerivativeParsedMaterial
+    f_name = Dchi_c
+    material_property_names = 'D_c chi_c'
+    function = 'D_c*chi_c'
+    derivative_order = 2
+
+    outputs = exodus
+    output_properties = Dchi_c
+  [../]
+
+  [./chi_m]
+    type = DerivativeParsedMaterial
+    f_name = chi_m
+
+    function = '(h_a/A_m_a + h_b/A_m_b + h_g/A_m_g) / Va^2'
+
+    material_property_names = 'Va h_a A_m_a h_b A_m_b h_g A_m_g'
+
+    derivative_order = 2
+    outputs = exodus
+    output_properties = chi_m
+  [../]
+
+  [./mob_m]
+    type = DerivativeParsedMaterial
+    f_name = Dchi_m
+    material_property_names = 'D_m chi_m'
+    function = 'D_m*chi_m'
+    derivative_order = 2
+
+    outputs = exodus
+    output_properties = Dchi_m
+  [../]
+
+
   [./chi_o]
     type = DerivativeParsedMaterial
     f_name = chi_o
@@ -745,17 +966,6 @@
     derivative_order = 2
     outputs = exodus
     output_properties = chi_o
-  [../]
-
-  [./mob_c]
-    type = DerivativeParsedMaterial
-    f_name = Dchi_c
-    material_property_names = 'D_c chi_c'
-    function = 'D_c*chi_c'
-    derivative_order = 2
-
-    outputs = exodus
-    output_properties = Dchi_c
   [../]
 
   [./mob_o]

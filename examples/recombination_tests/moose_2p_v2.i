@@ -3,12 +3,12 @@
   dim = 2
 
   xmin = 0
-  xmax = 10
-  nx = 100
+  xmax = 1 #micron
+  nx = 200
 
   ymin = 0
-  ymax = 10
-  ny = 100
+  ymax = 1 #micron
+  ny = 200
 
   parallel_type = REPLICATED
   #skip_partitioning = false
@@ -19,6 +19,12 @@
 #   coord_type = RZ
 #   rz_coord_axis = Y
 # []
+
+[GlobalParams]
+  # Interface thickness from Grand Potential material
+  width = 0.02
+[../]
+
 #------------------------------------------------------------------------------#
 [Variables]
   [./w_c]
@@ -35,45 +41,16 @@
 []
 
 #------------------------------------------------------------------------------#
-# Bnds stuff
-[AuxVariables]
-  [./bnds]
-    order = FIRST
-    family = LAGRANGE
+[Functions]
+  [./ic_func_etaa0]
+    type = ParsedFunction
+    value = 'int_thick:=0.02; 0.5*(1.0+tanh(pi*(-y+1.0/2)/int_thick))'
   [../]
-
-  # Auxiliary variables for Reaction_GPM kernel
-  [./rho_c_var]
-    family = MONOMIAL
-    order = CONSTANT
-  [../]
-  [./rho_o_var]
-    family = MONOMIAL
-    order = CONSTANT
+  [./ic_func_etab0]
+    type = ParsedFunction
+    value = 'int_thick:=0.02; 0.5*(1.0+tanh(pi*(y-1.0/2)/int_thick))'
   [../]
 []
-
-[AuxKernels]
-  [./BndsCalc]
-    type = BndsCalcAux
-    variable = bnds
-    execute_on = timestep_end
-    v = 'etaa0 etab0'
-    var_name_base = 'eta'
-  [../]
-
-  [./rho_c_aux]
-    type = MaterialRealAux
-    property = 'rho_c'
-    variable = rho_c_var
-  [../]
-  [./rho_o_aux]
-    type = MaterialRealAux
-    property = 'rho_o'
-    variable = rho_o_var
-  [../]
-[]
-
 
 #------------------------------------------------------------------------------#
 [ICs]
@@ -99,19 +76,49 @@
   [../]
 []
 
-
 #------------------------------------------------------------------------------#
-[Functions]
-  [./ic_func_etaa0]
-    type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(-y+5.0)/int_thick))'
+# Bnds stuff
+[AuxVariables]
+  [./bnds]
+    order = FIRST
+    family = LAGRANGE
   [../]
-  [./ic_func_etab0]
-    type = ParsedFunction
-    value = 'int_thick:=0.2; 0.5*(1.0+tanh(pi*(y-5.0)/int_thick))'
+
+  # Auxiliary variables for Reaction_GPM kernel
+  [./rho_c_var]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+  [./rho_o_var]
+    order = CONSTANT
+    family = MONOMIAL
   [../]
 []
 
+#------------------------------------------------------------------------------#
+[AuxKernels]
+  [./BndsCalc]
+    type = BndsCalcAux
+    variable = bnds
+    execute_on = 'TIMESTEP_END'
+    v = 'etaa0 etab0'
+    var_name_base = 'eta'
+  [../]
+
+  [./rho_c_aux]
+    type = MaterialRealAux
+    property = 'rho_c'
+    variable = rho_c_var
+    execute_on = 'LINEAR TIMESTEP_END'
+  [../]
+
+  [./rho_o_aux]
+    type = MaterialRealAux
+    property = 'rho_o'
+    variable = rho_o_var
+    execute_on = 'LINEAR TIMESTEP_END'
+  [../]
+[]
 
 #------------------------------------------------------------------------------#
   #    #  ######  #####   #    #  ######  #        ####
@@ -508,19 +515,23 @@
   [../]
 
   #----------------------------------------------------------------------------#
-  # Constant parameters
-  [./constants]
-    type = GenericConstantMaterial
-    prop_names =  'kappa  Va'
-    prop_values = '0.01   1.0'
+  # Grand Potential Interface Parameters
+  [./iface]
+    # reproduce the parameters from GrandPotentialMultiphase.i
+    type = GrandPotentialInterface
+    gamma_names = 'gab'
+    sigma = '0.5'
+    kappa_name = kappa
+    mu_name = mu
     outputs = exodus
   [../]
 
-  [./gammas]
-    # Future work: how to make these parameters realistic
+  #----------------------------------------------------------------------------#
+  # Constant parameters
+  [./atomic_vol]
     type = GenericConstantMaterial
-    prop_names  = 'gab     mu'
-    prop_values = '1.0     1.0'
+    prop_names =  'Va'
+    prop_values = '1.0'
     outputs = exodus
   [../]
 
@@ -530,7 +541,6 @@
                    A_c_b    xeq_c_b'
     prop_values = '35       0.98
                    35       0.02'
-
     outputs = exodus
   [../]
 
@@ -540,7 +550,6 @@
                    A_o_b    xeq_o_b'
     prop_values = '35       0.02
                    35       0.98'
-
     outputs = exodus
   [../]
 
